@@ -7,9 +7,6 @@
     "watch": "yarn build --watch",
     "build": "esbuild index.ts --bundle --outfile=dist/index.js --platform=node"
   },
-  "bin": {
-    "eleventy": "./dist/index.js"
-  },
   "repository": "https://github.com/Denperidge/eleventy-test.git",
   "author": "Denperidge",
   "license": "MIT",
