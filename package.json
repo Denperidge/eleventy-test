@@ -2,14 +2,10 @@
   "name": "eleventy-test",
   "version": "0.1.0",
   "description": "Multi-setup testing for Eleventy plugins",
-  "source": "index.ts",
-  "type": "module",
-  "module": "dist/module.js",
-  "types": "dist/types.d.ts",
   "scripts": {
-    "start": "node dist/module.js",
-    "watch": "parcel watch",
-    "build": "parcel build"
+    "start": "node dist/index.js",
+    "watch": "yarn build --watch",
+    "build": "esbuild index.ts --bundle --outfile=dist/index.js --platform=node"
   },
   "bin": {
     "eleventy": "./dist/index.js"
@@ -18,13 +14,7 @@
   "author": "Denperidge",
   "license": "MIT",
   "devDependencies": {
-    "@parcel/packager-ts": "2.13.2",
-    "@parcel/transformer-typescript-types": "2.13.2",
-    "@types/node": "^22.10.1",
-    "parcel": "^2.13.2",
-    "path-browserify": "^1.0.0",
-    "process": "^0.11.10",
-    "typescript": ">=3.0.0"
+    "esbuild": "^0.24.0"
   },
   "dependencies": {
     "@11ty/eleventy1": "npm:@11ty/eleventy@1.0.2",
