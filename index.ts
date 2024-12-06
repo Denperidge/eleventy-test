@@ -53,12 +53,13 @@ async function buildEleventy({
     globalInputDir,
     useServe=false
 }) : Promise<ScenarioOutput> {
+    /*
     console.log(`
 Building ${scenarioName} (${eleventyVersion})
 projectRoot = ${projectRoot}
 globalInputDir = ${globalInputDir}
 scenarioDir: ${scenarioDir}
-`);
+`);*/
     return new Promise((resolve, reject)=> {
         // I tried using Eleventy programmatically. Emphasis on tried
         // Thanks to https://github.com/actions/setup-node/issues/224#issuecomment-943531791
@@ -90,9 +91,11 @@ scenarioDir: ${scenarioDir}
             })
 
             out.on("close", (code) => {
+                /*
                 console.log("Code: " + code);
                 console.log(out.stdout)
                 console.log(out.stderr)
+                */
                 const output = new ScenarioOutput(outputDir, scenarioName)
                 resolve(output);
             });
@@ -108,9 +111,9 @@ scenarioDir: ${scenarioDir}
 
 }
 
-
-
-export async function buildScenarios(projectRoot=cwd()) : Promise<ScenarioOutput[]> {
+export async function buildScenarios(projectRoot: string, returnArray?:true): Promise<ScenarioOutput[]>;
+export async function buildScenarios(projectRoot: string, returnArray?:false): Promise<{[key:string]: ScenarioOutput}>;
+export async function buildScenarios(projectRoot=cwd(), returnArray=true) {
     return new Promise(async (resolve, reject) => {
         const scenariosDir = join(projectRoot, DIR_SCENARIOS)
         const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
@@ -143,11 +146,18 @@ export async function buildScenarios(projectRoot=cwd()) : Promise<ScenarioOutput
                 scenarioDir,
             }))
         }
-        resolve(scenarioOutputs)
-        reject(scenarioOutputs)
+        if (returnArray) {
+            resolve(scenarioOutputs)
+        } else {
+            const returnDict: {[key: string]: ScenarioOutput} = {};
+            scenarioOutputs.forEach((scenarioOutput) => {
+                returnDict[scenarioOutput.title] = scenarioOutput;
+            });
+            resolve(returnDict)
+        }
     });
 }
 
 if (require.main === module) {
-    buildScenarios();
+    buildScenarios(cwd());
 }

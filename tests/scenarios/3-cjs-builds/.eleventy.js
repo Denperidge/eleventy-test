@@ -1,3 +1,3 @@
 module.exports = function (eleventyConfig) {
-    eleventyConfig.addGlobalData("title", "v3 with cjs!");
+    eleventyConfig.addGlobalData("title", "v3!");
 }

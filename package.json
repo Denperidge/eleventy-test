@@ -8,7 +8,7 @@
     "build": "yarn build:js && yarn build:types",
     "build:js": "esbuild index.ts --bundle --outfile=dist/index.js --platform=node",
     "build:types": "tsc --declaration index.ts --emitDeclarationOnly --outDir ./dist",
-    "test": "ava tests/tests/everything-builds.mjs --timeout=30s"
+    "test": "ava tests/test.mjs --timeout=30s"
   },
   "repository": "https://github.com/Denperidge/eleventy-test.git",
   "author": "Denperidge",
