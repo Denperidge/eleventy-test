@@ -1,3 +1,3 @@
-export default function (eleventyConfig) {
+module.exports = function (eleventyConfig) {
     eleventyConfig.addGlobalData("title", "v3 with esm!");
 }

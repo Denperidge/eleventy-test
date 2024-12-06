@@ -8,9 +8,21 @@ const DIR_TESTS = join(DIR_BASE, "tests");
 const DIR_INPUT = join(DIR_BASE, "input");
 
 
-function buildEleventy(eleventyVersion, scenarioDir, projectRoot=cwd(), generalInputDir, hashTruncate=16, runAsync=true, useServe=false) {
+function buildEleventy({
+    eleventyVersion,
+    scenarioDir,
+    scenarioName,
+    projectRoot=cwd(),
+    globalInputDir,
+    useServe=false
+}) {
+    console.log(`
+Building ${scenarioName} (${eleventyVersion})
+projectRoot = ${projectRoot}
+globalInputDir = ${globalInputDir}
+scenarioDir: ${scenarioDir}
+`);
     return new Promise((resolve, reject)=> {
-
         // I tried using Eleventy programmatically. Emphasis on tried
         // Thanks to https://github.com/actions/setup-node/issues/224#issuecomment-943531791
 
@@ -22,24 +34,27 @@ function buildEleventy(eleventyVersion, scenarioDir, projectRoot=cwd(), generalI
             ).bin.eleventy;
         const pathToBin = join(eleventyDir, bin);
         
-        const scenarioInputDir = join(projectRoot, scenarioDir, "input");
-        console.log(scenarioInputDir)
-        const inputDir = existsSync(scenarioInputDir) ? scenarioInputDir : generalInputDir;
+        const scenarioInputDir = join(scenarioDir, "input");
+        const inputDir = existsSync(scenarioInputDir) ? scenarioInputDir : globalInputDir;
         if (inputDir == undefined) {
             throw Error("inputDir is undefined!")
         }
         const outputDir = join(scenarioDir, "eleventy-test-out")
 
         try {
-            console.log(inputDir)
             //const command = useServe ? `timeout 5 node ${pathToBin} --serve` : `node ${pathToBin}`
-            const out = fork(pathToBin, ["--input", inputDir, "--output", outputDir ], {cwd: scenarioDir})
+            const out = fork(
+                pathToBin, 
+                ["--input", inputDir, "--output", outputDir ], 
+            {cwd: scenarioDir})
             out.on("message", (msg) => {
                 console.log(msg)
             })
 
             out.on("close", (code) => {
                 console.log("Code: " + code);
+                console.log(out.stdout)
+                console.log(out.stderr)
                 resolve(code);
             });
             
@@ -57,13 +72,22 @@ function buildEleventy(eleventyVersion, scenarioDir, projectRoot=cwd(), generalI
 
 
 function main(projectRoot=cwd()) {
-    const scenarios = readdirSync(DIR_SCENARIOS);
+    const scenariosDir = join(projectRoot, DIR_SCENARIOS)
+    const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
 
-    let generalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
+    const scenarioDirs = readdirSync(scenariosDir);
 
-    scenarios.forEach(dirname => {
-        const scenarioDir = join(cwd(), DIR_SCENARIOS, dirname)
-        buildEleventy("eleventy3", scenarioDir, cwd(), generalInputDir)
+    scenarioDirs.forEach(scenarioDirname => {
+        const scenarioDir = join(scenariosDir, scenarioDirname)
+        
+        buildEleventy({
+            eleventyVersion: "eleventy3",
+            scenarioName: scenarioDirname,
+            globalInputDir,
+            projectRoot,
+            scenarioDir,
+
+        });
     })
     return;
     buildEleventy("eleventy2", "")
