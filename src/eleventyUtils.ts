@@ -5,30 +5,30 @@ import { cwd } from "process";
 
 import ScenarioOutput from "./ScenarioOutput";
 
+function installEleventy(eleventyVersion: string, cwd: string, command){
+    try {
+        execSync(`${command} @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:cwd})
+    } catch (e) {
+        console.error(`Couldn't install eleventy ${eleventyVersion} using yarn`)
+        throw e;
+    }
+}
 
 export function ensureEleventyExists(projectRoot: string, eleventyVersion: string) {
     const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion)
     if (existsSync(eleventyDir)) {
         return eleventyDir;
     } else {
-        console.log("Not existing!", eleventyVersion)
+        console.log(`Eleventy version ${eleventyVersion} could not be found. Installing...`)
         if (existsSync(join(projectRoot, "package-lock.json"))) {
-            // NPM is used TODO
-            throw Error("not implemented")
-
+            installEleventy(eleventyVersion, projectRoot, "npm install --save-dev")
         } else if (existsSync(join(projectRoot, "yarn.lock"))) {
             // Yarn is used
-            try {
-                execSync(`yarn add -D @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:projectRoot})
-            } catch (e) {
-                console.error(`Couldn't install eleventy ${eleventyVersion} using yarn`)
-                throw e;
-            }
-            return eleventyDir
+            installEleventy(eleventyVersion, projectRoot, "yarn add -D")
         } else {
-            throw new Error("Could not determine package manager")
+            throw new Error(`Error while installing eleventy${eleventyVersion}: Could not determine package manager`);
         }
-        // TODO pnpm
+        return eleventyDir;
     }
 }
 
