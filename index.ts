@@ -110,40 +110,42 @@ scenarioDir: ${scenarioDir}
 
 
 
-export async function buildScenarios(projectRoot=cwd()) {
-    const scenariosDir = join(projectRoot, DIR_SCENARIOS)
-    const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
-
-    const scenarioDirs = readdirSync(scenariosDir);
-
-    const testOutputs: TestOutput[] = [];
-
-    for (let i=0; i < scenarioDirs.length; i++) {
-        const scenarioDirname = scenarioDirs[i]
-        const scenarioDir = join(scenariosDir, scenarioDirname)
-
-        let eleventyVersion;
-        const scenarioMajorVersion = scenarioDirname[0]
-        switch(scenarioMajorVersion) {
-            case "1":
-            case "2":
-            case "3":
-                eleventyVersion = "eleventy" + scenarioMajorVersion
-                break
-            default:
-                throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
+export async function buildScenarios(projectRoot=cwd()) : Promise<TestOutput[]> {
+    return new Promise(async (resolve, reject) => {
+        const scenariosDir = join(projectRoot, DIR_SCENARIOS)
+        const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
+    
+        const scenarioDirs = readdirSync(scenariosDir);
+    
+        const testOutputs: TestOutput[] = [];
+    
+        for (let i=0; i < scenarioDirs.length; i++) {
+            const scenarioDirname = scenarioDirs[i]
+            const scenarioDir = join(scenariosDir, scenarioDirname)
+    
+            let eleventyVersion;
+            const scenarioMajorVersion = scenarioDirname[0]
+            switch(scenarioMajorVersion) {
+                case "1":
+                case "2":
+                case "3":
+                    eleventyVersion = "eleventy" + scenarioMajorVersion
+                    break
+                default:
+                    throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
+            }
+            
+            testOutputs.push(await buildEleventy({
+                eleventyVersion: eleventyVersion,
+                scenarioName: scenarioDirname,
+                globalInputDir,
+                projectRoot,
+                scenarioDir,
+            }))
         }
-        
-        testOutputs.push(await buildEleventy({
-            eleventyVersion: eleventyVersion,
-            scenarioName: scenarioDirname,
-            globalInputDir,
-            projectRoot,
-            scenarioDir,
-        }))
-    }
-    console.log("----")
-    console.log(testOutputs)
+        resolve(testOutputs)
+        reject(testOutputs)
+    });
 }
 
 if (require.main === module) {
