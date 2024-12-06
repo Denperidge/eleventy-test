@@ -6,7 +6,7 @@
     "start": "node dist/index.js",
     "watch": "npm-run-all --parallel 'build:js --watch' 'build:types -w'",
     "build": "yarn build:js && yarn build:types",
-    "build:js": "esbuild index.ts --bundle --outfile=dist/index.js --platform=node",
+    "build:js": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",
     "build:types": "tsc --declaration index.ts --emitDeclarationOnly --outDir ./dist",
     "test": "ava tests/test.mjs --timeout=30s"
   },
@@ -14,6 +14,9 @@
   "author": "Denperidge",
   "license": "MIT",
   "devDependencies": {
+    "@11ty/eleventy1.0.2": "npm:@11ty/eleventy@1.0.2",
+    "@11ty/eleventy2.0.1": "npm:@11ty/eleventy@2.0.1",
+    "@11ty/eleventy3.0.0": "npm:@11ty/eleventy@3.0.0",
     "@types/node": "^22.10.1",
     "ava": "^6.2.0",
     "esbuild": "^0.24.0",
