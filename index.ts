@@ -40,6 +40,7 @@ scenarioDir: ${scenarioDir}
             throw Error("inputDir is undefined!")
         }
         const outputDir = join(scenarioDir, "eleventy-test-out")
+        rmSync(outputDir, {force: true, recursive: true})
 
         try {
             //const command = useServe ? `timeout 5 node ${pathToBin} --serve` : `node ${pathToBin}`
