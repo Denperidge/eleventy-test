@@ -9,15 +9,15 @@ function getDom(input) {
     return new JSDOM(input).window.document;
 }
 
-test("3-cjs-builds == 3-esm-builds", t => {
+test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", t => {
     t.deepEqual(
-        results["3-cjs-builds"].getFileContent("/index.html"), 
-        results["3-esm-builds"].getFileContent("/index.html"));
+        results["3--cjs-builds"].getFileContent("/index.html"), 
+        results["3--esm-builds"].getFileContent("/index.html"));
 });
 
-test("2-own-input uses its own input", t=> {
-    const v2regularOutput = results[("2-builds")] 
-    const v2OwnInputOutput = results[("2-own-input")]
+test("Scenario-specific inputs are used where defined (2--own-input uses its own input)", t=> {
+    const v2regularOutput = results[("2--builds")];
+    const v2OwnInputOutput = results[("2--own-input")];
 
     const ownInputIndexContent = v2OwnInputOutput.getFileContent("/index.html");
     const ownInputSubdirContent = v2OwnInputOutput.getFileContent("/subdir/index.html");
@@ -32,7 +32,7 @@ test("2-own-input uses its own input", t=> {
     t.deepEqual(ownInputSubdirDom.getElementById("paragraph").textContent, "v2!");
 })
 
-test("Correct eleventy.generator found for corresponding scenario version ", t => {
+test("The specified Eleventy versions are used (found correct values for [meta name='generator' content='{{eleventy.generator}}']) ", t => {
     Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
         let expectedGenerator;
         switch(scenarioTitle[0]) {
@@ -40,7 +40,12 @@ test("Correct eleventy.generator found for corresponding scenario version ", t =
                 expectedGenerator = "Eleventy v1.0.2";
                 break;
             case "2":
-                expectedGenerator = "Eleventy v2.0.1";
+                if (scenarioTitle.includes("2.0.0")) {
+                    expectedGenerator = "Eleventy v2.0.0";
+                } else {
+                    expectedGenerator = "Eleventy v2.0.1";
+
+                }
                 break;
             case "3":
                 expectedGenerator = "Eleventy v3.0.0";
@@ -56,7 +61,7 @@ test("Correct eleventy.generator found for corresponding scenario version ", t =
     })
 })
 
-test("Correct title has been rendered from corresponding scenario .eleventy.js", t => {
+test("The scenario-specific configuration files are reflected in scenario output (Correct title has been rendered from corresponding scenario .eleventy.js)", t => {
     Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
         let expecedTitle;
         switch(scenarioTitle[0]) {
@@ -80,10 +85,15 @@ test("Correct title has been rendered from corresponding scenario .eleventy.js",
     })
 });
 
-test("Subdirectories with html are rendered in every scenario", t => {
+test("Input subdirectories are rendered & returned in every scenarui", t => {
     Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
         const outputFilenames = Object.keys(scenarioOutput.files);
-        t.true(outputFilenames.includes("/index.html"))
+        t.true(outputFilenames.includes("/index.html"));
+        t.truthy(scenarioOutput.getFileContent("/index.html"));
+        t.not("", scenarioOutput.getFileContent("/index.html"));
+
         t.true(outputFilenames.includes("/subdir/index.html"))
+        t.truthy(scenarioOutput.getFileContent("/subdir/index.html"));
+        t.not("", scenarioOutput.getFileContent("/subdir/index.html"));
     })
 })
