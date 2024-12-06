@@ -29,9 +29,11 @@ function recursiveFindFiles(dir: string, files:string[]=[]) {
 
 class TestOutput {
     eleventyOutputDir: string;
-    files: {[key: string]: () => string}
+    title: string;
+    files: {[key: string]: () => string};
 
-    constructor(pEleventyOutputDir: string) {
+    constructor(pEleventyOutputDir: string, pTitle: string) {
+        this.title = pTitle;
         this.eleventyOutputDir = pEleventyOutputDir;
         this.files = {};
         recursiveFindFiles(this.eleventyOutputDir).forEach((filepath: string) => {
@@ -43,14 +45,14 @@ class TestOutput {
 }
 
 
-function buildEleventy({
+async function buildEleventy({
     eleventyVersion,
     scenarioDir,
     scenarioName,
     projectRoot=cwd(),
     globalInputDir,
     useServe=false
-}) {
+}) : Promise<TestOutput> {
     console.log(`
 Building ${scenarioName} (${eleventyVersion})
 projectRoot = ${projectRoot}
@@ -91,10 +93,8 @@ scenarioDir: ${scenarioDir}
                 console.log("Code: " + code);
                 console.log(out.stdout)
                 console.log(out.stderr)
-                const output = new TestOutput(outputDir)
-                console.log(output.files)
-                console.log(output.files["/index.html"]())
-                resolve(code);
+                const output = new TestOutput(outputDir, scenarioName)
+                resolve(output);
             });
             
             //const out = execFile("node", ["--version"], {cwd: scenarioDir, encoding: "utf-8"});
@@ -110,13 +110,16 @@ scenarioDir: ${scenarioDir}
 
 
 
-function main(projectRoot=cwd()) {
+export async function buildScenarios(projectRoot=cwd()) {
     const scenariosDir = join(projectRoot, DIR_SCENARIOS)
     const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
 
     const scenarioDirs = readdirSync(scenariosDir);
 
-    scenarioDirs.forEach(scenarioDirname => {
+    const testOutputs: TestOutput[] = [];
+
+    for (let i=0; i < scenarioDirs.length; i++) {
+        const scenarioDirname = scenarioDirs[i]
         const scenarioDir = join(scenariosDir, scenarioDirname)
 
         let eleventyVersion;
@@ -131,15 +134,18 @@ function main(projectRoot=cwd()) {
                 throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
         }
         
-        buildEleventy({
+        testOutputs.push(await buildEleventy({
             eleventyVersion: eleventyVersion,
             scenarioName: scenarioDirname,
             globalInputDir,
             projectRoot,
             scenarioDir,
-
-        });
-    })
+        }))
+    }
+    console.log("----")
+    console.log(testOutputs)
 }
 
-main();
+if (require.main === module) {
+    buildScenarios();
+}
