@@ -29,19 +29,15 @@ export async function buildScenarios(projectRoot=cwd(), returnArray=true) {
             let scenarioEleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
 
             if (scenarioEleventyVersion.length < 5) {
-                const scenarioMajorVersion = scenarioDirname[0]
-                switch(scenarioMajorVersion) {
-                    case "1":
-                        scenarioEleventyVersion = "1.0.2";
+                const scenarioMajorVersion = scenarioDirname[0];
+                const versions = await (await fetch("https://api.github.com/repos/11ty/eleventy/tags")).json();
+                for (let i=0; i < versions.length; i++) {
+                    const version = versions[i];
+                    // When auto-selecting, choose a non-alpha/canary build
+                    if (!version.name.includes("-") && version.name[1] == scenarioMajorVersion) {
+                        scenarioEleventyVersion = version.name.substring(1);
                         break;
-                    case "2":
-                        scenarioEleventyVersion = "2.0.1";
-                        break;
-                    case "3":
-                        scenarioEleventyVersion = "3.0.0"
-                        break
-                    default:
-                        throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
+                    }
                 }
             }
             

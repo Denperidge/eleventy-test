@@ -260,9 +260,9 @@
     parse-srcset "^1.0.2"
 
 "@11ty/recursive-copy@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@11ty/recursive-copy/-/recursive-copy-3.0.0.tgz#3dc6e3fac20d8f1d37b48c4757ae94e7311e662c"
-  integrity sha512-v1Mr7dWx5nk69/HRRtDHUYDV9N8+cE12IGiKSFOwML7HjOzUXwTP88e3cGuhqoVstkBil1ZEIaOB0KPP1zwqXA==
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@11ty/recursive-copy/-/recursive-copy-3.0.1.tgz#9c6aad23beb271e23ef8c8ed43e975b99fe746b6"
+  integrity sha512-suoSv7CanyKXIwwtLlzP43n3Mm3MTR7UzaLgnG+JP9wAdg4uCIUJiAhhgs/nkwtkvsuqfrGWrUiaG1K9mEoiPg==
   dependencies:
     errno "^0.1.2"
     graceful-fs "^4.2.11"
