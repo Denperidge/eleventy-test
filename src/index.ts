@@ -3,21 +3,16 @@ import { join } from "path";
 import { readdirSync, existsSync } from "fs";
 
 import ScenarioOutput from "./ScenarioOutput";
-import {buildEleventy} from "./eleventyUtils";
-
-
-const DIR_BASE = "tests";
-const DIR_SCENARIOS = join(DIR_BASE, "scenarios");
-const DIR_INPUT = join(DIR_BASE, "input");
+import { buildEleventy } from "./eleventyUtils";
 
 export * from "./eleventyUtils";
 
-export async function buildScenarios(projectRoot: string, returnArray?:true): Promise<ScenarioOutput[]>;
-export async function buildScenarios(projectRoot: string, returnArray?:false): Promise<{[key:string]: ScenarioOutput}>;
-export async function buildScenarios(projectRoot=cwd(), returnArray=true) {
+export async function buildScenarios(projectRoot: string, returnArray?:true, scenariosDir?: string, globalInputDir?: string): Promise<ScenarioOutput[]>;
+export async function buildScenarios(projectRoot: string, returnArray?:false, scenariosDir?: string, globalInputDir?: string): Promise<{[key:string]: ScenarioOutput}>;
+export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input") {
     return new Promise(async (resolve, reject) => {
-        const scenariosDir = join(projectRoot, DIR_SCENARIOS)
-        const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
+        scenariosDir = join(projectRoot, scenariosDir)
+        globalInputDir = existsSync(join(projectRoot, globalInputDir)) ? join(projectRoot, globalInputDir) : "undefined";
     
         const scenarioDirs = readdirSync(scenariosDir);
     
