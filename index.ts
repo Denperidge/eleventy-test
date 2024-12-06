@@ -101,9 +101,6 @@ function main(projectRoot=cwd()) {
 
         });
     })
-    return;
-    buildEleventy("eleventy2", "")
-    buildEleventy("eleventy1", "")
 }
 
 main();
