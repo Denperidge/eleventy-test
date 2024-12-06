@@ -39,6 +39,30 @@ test("Correct eleventy.generator found for corresponding scenario version ", t =
     })
 })
 
+test("Correct title has been rendered from corresponding scenario .eleventy.js", t => {
+    Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
+        let expecedTitle;
+        switch(scenarioTitle[0]) {
+            case "1":
+                expecedTitle = "v1!";
+                break;
+            case "2":
+                expecedTitle = "v2!";
+                break;
+            case "3":
+                expecedTitle = "v3!";
+                break;
+            default:
+                throw Error("Could not determine Eleventy version")
+
+        }
+
+        const dom = getDom(scenarioOutput.files["/index.html"]())
+        const title = dom.querySelector("title").text;
+        t.is(expecedTitle, title)
+    })
+});
+
 test("Subdirectories with html are rendered in every scenario", t => {
     Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
         const outputFilenames = Object.keys(scenarioOutput.files);
