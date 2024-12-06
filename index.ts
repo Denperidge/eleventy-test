@@ -79,9 +79,21 @@ function main(projectRoot=cwd()) {
 
     scenarioDirs.forEach(scenarioDirname => {
         const scenarioDir = join(scenariosDir, scenarioDirname)
+
+        let eleventyVersion;
+        const scenarioMajorVersion = scenarioDirname[0]
+        switch(scenarioMajorVersion) {
+            case "1":
+            case "2":
+            case "3":
+                eleventyVersion = "eleventy" + scenarioMajorVersion
+                break
+            default:
+                throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
+        }
         
         buildEleventy({
-            eleventyVersion: "eleventy3",
+            eleventyVersion: eleventyVersion,
             scenarioName: scenarioDirname,
             globalInputDir,
             projectRoot,
