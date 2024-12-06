@@ -1,11 +1,46 @@
 import {cwd} from "process";
-import {join} from "path";
-import { readFileSync, rmSync, readdirSync, existsSync } from "fs";
+import {join, resolve} from "path";
+import {  lstatSync, readFileSync, rmSync, readdirSync, existsSync } from "fs";
 import {execSync, fork} from "child_process";
 const DIR_BASE = "tests";
 const DIR_SCENARIOS = join(DIR_BASE, "scenarios");
 const DIR_TESTS = join(DIR_BASE, "tests");
 const DIR_INPUT = join(DIR_BASE, "input");
+
+function recursiveFindFiles(dir: string, files:string[]=[]) {
+    const foundDirs: string[] = [];
+    readdirSync(dir).forEach(name => {
+        const path = join(dir, name)
+        const stat = lstatSync(path);
+        if (stat.isDirectory()) {
+            foundDirs.push(path);
+        } else if (stat.isFile()) {
+            files.push(path);
+        }
+    });
+
+    foundDirs.forEach((dir) => {
+        files = recursiveFindFiles(dir, files)
+    });
+
+
+    return files;
+}
+
+class TestOutput {
+    eleventyOutputDir: string;
+    files: {[key: string]: () => string}
+
+    constructor(pEleventyOutputDir: string) {
+        this.eleventyOutputDir = pEleventyOutputDir;
+        this.files = {};
+        recursiveFindFiles(this.eleventyOutputDir).forEach((filepath: string) => {
+            this.files[filepath.replace(this.eleventyOutputDir, "")] = function() {
+                return readFileSync(filepath, {encoding: "utf-8"})
+            }
+        })
+    }
+}
 
 
 function buildEleventy({
@@ -56,6 +91,9 @@ scenarioDir: ${scenarioDir}
                 console.log("Code: " + code);
                 console.log(out.stdout)
                 console.log(out.stderr)
+                const output = new TestOutput(outputDir)
+                console.log(output.files)
+                console.log(output.files["/index.html"]())
                 resolve(code);
             });
             
