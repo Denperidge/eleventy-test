@@ -44,6 +44,32 @@ class ScenarioOutput {
     }
 }
 
+function ensureEleventyExists(projectRoot: string, eleventyVersion: string) {
+    const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion)
+    if (existsSync(eleventyDir)) {
+        return eleventyDir;
+    } else {
+        console.log("Not existing!", eleventyVersion)
+        if (existsSync(join(projectRoot, "package-lock.json"))) {
+            // NPM is used TODO
+            throw Error("not implemented")
+
+        } else if (existsSync(join(projectRoot, "yarn.lock"))) {
+            // Yarn is used
+            try {
+                execSync(`yarn add -D @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:projectRoot})
+            } catch (e) {
+                console.error(`Couldn't install eleventy ${eleventyVersion} using yarn`)
+                throw e;
+            }
+            return eleventyDir
+        } else {
+            throw new Error("Could not determine package manager")
+        }
+        // TODO pnpm
+    }
+}
+
 
 async function buildEleventy({
     eleventyVersion,
@@ -64,7 +90,8 @@ scenarioDir: ${scenarioDir}
         // I tried using Eleventy programmatically. Emphasis on tried
         // Thanks to https://github.com/actions/setup-node/issues/224#issuecomment-943531791
 
-        const eleventyDir=join(projectRoot, "node_modules/@11ty/", eleventyVersion);
+        const eleventyDir = ensureEleventyExists(projectRoot, eleventyVersion);
+
         const bin = JSON.parse(
             readFileSync(
                 join(eleventyDir, "package.json"),
@@ -130,16 +157,20 @@ export async function buildScenarios(projectRoot=cwd(), returnArray=true) {
             const scenarioMajorVersion = scenarioDirname[0]
             switch(scenarioMajorVersion) {
                 case "1":
+                    eleventyVersion = "1.0.2";
+                    break;
                 case "2":
+                    eleventyVersion = "2.0.1";
+                    break;
                 case "3":
-                    eleventyVersion = "eleventy" + scenarioMajorVersion
+                    eleventyVersion = "3.0.0"
                     break
                 default:
                     throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
             }
             
             scenarioOutputs.push(await buildEleventy({
-                eleventyVersion: eleventyVersion,
+                eleventyVersion,
                 scenarioName: scenarioDirname,
                 globalInputDir,
                 projectRoot,
