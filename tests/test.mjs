@@ -15,6 +15,23 @@ test("3-cjs-builds == 3-esm-builds", t => {
         results["3-esm-builds"].files["/index.html"]());
 });
 
+test("2-own-input uses its own input", t=> {
+    const v2regularOutput = results[("2-builds")] 
+    const v2OwnInputOutput = results[("2-own-input")]
+
+    const ownInputIndexContent = v2OwnInputOutput.files["/index.html"]();
+    const ownInputSubdirContent = v2OwnInputOutput.files["/subdir/index.html"]();
+
+    t.notDeepEqual(v2regularOutput.files["/index.html"](), ownInputIndexContent)
+    t.notDeepEqual(v2regularOutput.files["/subdir/index.html"](), ownInputSubdirContent)
+
+    const ownInputIndexDom = getDom(ownInputIndexContent);
+    t.deepEqual(ownInputIndexDom.getElementById("text").textContent, "v2!");
+
+    const ownInputSubdirDom = getDom(ownInputSubdirContent)
+    t.deepEqual(ownInputSubdirDom.getElementById("paragraph").textContent, "v2!");
+})
+
 test("Correct eleventy.generator found for corresponding scenario version ", t => {
     Object.entries(results).forEach(([scenarioTitle, scenarioOutput])=> {
         let expectedGenerator;
