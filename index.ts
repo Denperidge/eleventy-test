@@ -27,7 +27,7 @@ function recursiveFindFiles(dir: string, files:string[]=[]) {
     return files;
 }
 
-class TestOutput {
+class ScenarioOutput {
     eleventyOutputDir: string;
     title: string;
     files: {[key: string]: () => string};
@@ -52,7 +52,7 @@ async function buildEleventy({
     projectRoot=cwd(),
     globalInputDir,
     useServe=false
-}) : Promise<TestOutput> {
+}) : Promise<ScenarioOutput> {
     console.log(`
 Building ${scenarioName} (${eleventyVersion})
 projectRoot = ${projectRoot}
@@ -93,7 +93,7 @@ scenarioDir: ${scenarioDir}
                 console.log("Code: " + code);
                 console.log(out.stdout)
                 console.log(out.stderr)
-                const output = new TestOutput(outputDir, scenarioName)
+                const output = new ScenarioOutput(outputDir, scenarioName)
                 resolve(output);
             });
             
@@ -110,14 +110,14 @@ scenarioDir: ${scenarioDir}
 
 
 
-export async function buildScenarios(projectRoot=cwd()) : Promise<TestOutput[]> {
+export async function buildScenarios(projectRoot=cwd()) : Promise<ScenarioOutput[]> {
     return new Promise(async (resolve, reject) => {
         const scenariosDir = join(projectRoot, DIR_SCENARIOS)
         const globalInputDir = existsSync(join(projectRoot, DIR_INPUT)) ? join(projectRoot, DIR_INPUT) : undefined;
     
         const scenarioDirs = readdirSync(scenariosDir);
     
-        const testOutputs: TestOutput[] = [];
+        const scenarioOutputs: ScenarioOutput[] = [];
     
         for (let i=0; i < scenarioDirs.length; i++) {
             const scenarioDirname = scenarioDirs[i]
@@ -135,7 +135,7 @@ export async function buildScenarios(projectRoot=cwd()) : Promise<TestOutput[]> 
                     throw Error(`${scenarioDirname} does not start with a major eleventy version. Exiting.`)
             }
             
-            testOutputs.push(await buildEleventy({
+            scenarioOutputs.push(await buildEleventy({
                 eleventyVersion: eleventyVersion,
                 scenarioName: scenarioDirname,
                 globalInputDir,
@@ -143,8 +143,8 @@ export async function buildScenarios(projectRoot=cwd()) : Promise<TestOutput[]> 
                 scenarioDir,
             }))
         }
-        resolve(testOutputs)
-        reject(testOutputs)
+        resolve(scenarioOutputs)
+        reject(scenarioOutputs)
     });
 }
 
