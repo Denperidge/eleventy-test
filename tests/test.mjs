@@ -11,19 +11,19 @@ function getDom(input) {
 
 test("3-cjs-builds == 3-esm-builds", t => {
     t.deepEqual(
-        results["3-cjs-builds"].files["/index.html"](), 
-        results["3-esm-builds"].files["/index.html"]());
+        results["3-cjs-builds"].getFileContent("/index.html"), 
+        results["3-esm-builds"].getFileContent("/index.html"));
 });
 
 test("2-own-input uses its own input", t=> {
     const v2regularOutput = results[("2-builds")] 
     const v2OwnInputOutput = results[("2-own-input")]
 
-    const ownInputIndexContent = v2OwnInputOutput.files["/index.html"]();
-    const ownInputSubdirContent = v2OwnInputOutput.files["/subdir/index.html"]();
+    const ownInputIndexContent = v2OwnInputOutput.getFileContent("/index.html");
+    const ownInputSubdirContent = v2OwnInputOutput.getFileContent("/subdir/index.html");
 
-    t.notDeepEqual(v2regularOutput.files["/index.html"](), ownInputIndexContent)
-    t.notDeepEqual(v2regularOutput.files["/subdir/index.html"](), ownInputSubdirContent)
+    t.notDeepEqual(v2regularOutput.getFileContent("/index.html"), ownInputIndexContent)
+    t.notDeepEqual(v2regularOutput.getFileContent("/subdir/index.html"), ownInputSubdirContent)
 
     const ownInputIndexDom = getDom(ownInputIndexContent);
     t.deepEqual(ownInputIndexDom.getElementById("text").textContent, "v2!");
@@ -50,7 +50,7 @@ test("Correct eleventy.generator found for corresponding scenario version ", t =
 
         }
 
-        const dom = getDom(scenarioOutput.files["/index.html"]())
+        const dom = getDom(scenarioOutput.getFileContent("/index.html"))
         const generator = dom.querySelector("meta[name='generator']").content;
         t.is(expectedGenerator, generator)
     })
@@ -74,7 +74,7 @@ test("Correct title has been rendered from corresponding scenario .eleventy.js",
 
         }
 
-        const dom = getDom(scenarioOutput.files["/index.html"]())
+        const dom = getDom(scenarioOutput.getFileContent("/index.html"))
         const title = dom.querySelector("title").text;
         t.is(expecedTitle, title)
     })

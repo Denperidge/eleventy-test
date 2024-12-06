@@ -30,17 +30,29 @@ function recursiveFindFiles(dir: string, files:string[]=[]) {
 class ScenarioOutput {
     eleventyOutputDir: string;
     title: string;
-    files: {[key: string]: () => string};
+    private _files: {[key: string]: () => string};
+    private cache: {[key: string]: string};
 
     constructor(pEleventyOutputDir: string, pTitle: string) {
+        this._files = {};
+        this.cache = {};
         this.title = pTitle;
         this.eleventyOutputDir = pEleventyOutputDir;
-        this.files = {};
         recursiveFindFiles(this.eleventyOutputDir).forEach((filepath: string) => {
-            this.files[filepath.replace(this.eleventyOutputDir, "")] = function() {
+            this._files[filepath.replace(this.eleventyOutputDir, "")] = function() {
                 return readFileSync(filepath, {encoding: "utf-8"})
             }
         })
+    }
+    get files() {
+        return this._files;
+    }
+
+    getFileContent(filename): string {
+        if (!Object.keys(this.cache).includes(filename)) {
+            this.cache[filename] = this._files[filename]();
+        }
+        return this.cache[filename];
     }
 }
 
