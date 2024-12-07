@@ -1,6 +1,6 @@
 {
   "name": "eleventy-test",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Multi-configuration testing for Eleventy plugins",
   "license": "MIT",
   "repository": "https://github.com/Denperidge/eleventy-test.git",

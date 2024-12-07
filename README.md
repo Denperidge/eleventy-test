@@ -24,13 +24,15 @@ Want to see how it is in action? For the dogfooding fans, you can see this libra
     import { buildScenarios } from "eleventy-test";
     import test from "ava";
 
-    // omit the second parameter to return as array
-    const resultsAsDict = await buildScenarios(cwd(), false);
+    const resultsAsDict = await buildScenarios({
+        projectRoot: cwd(),
+        returnArray: false
+    });
 
-    test("Check if index.html is consistent across builds", t => {
+    test("Check if index.html is consistent across builds", async t => {
         t.deepEqual(
-            results["3--example"].getFileContent("/index.html"), 
-            results["3.0.0--identical-example"].getFileContent("/index.html"));
+            await results["3--example"].getFileContent("/index.html"), 
+            await results["3.0.0--identical-example"].getFileContent("/index.html"));
     });
     ```
 
