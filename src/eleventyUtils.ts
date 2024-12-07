@@ -1,10 +1,29 @@
 import { execSync, fork } from "child_process";
 import { existsSync } from "fs";
-import { readFile, rm, access } from "fs/promises";
+import { readFile, rm, access, readdir } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
 
 import ScenarioOutput from "./ScenarioOutput";
+
+export async function determineInstalledEleventyVersions(projectRoot: string=cwd()) {
+    let eleventyPkgs = await readdir(join(projectRoot, "node_modules/@11ty/"));
+    const eleventyRegex = new RegExp(/eleventy(\d|$)/m)
+    eleventyPkgs = eleventyPkgs.filter(name => eleventyRegex.test(name))
+
+    const versions: {[key:string]: string} = {};
+    for (let i=0; i < eleventyPkgs.length; i++) {
+        const eleventyPkg = eleventyPkgs[i];
+        const eleventyPkgDir = join(projectRoot, "node_modules/@11ty/", eleventyPkg)
+        const version = JSON.parse(
+            await readFile(
+                join(eleventyPkgDir, "package.json"), 
+                {encoding: "utf-8"}
+            )).version;
+            versions[version] = eleventyPkgDir
+    }
+    return versions;
+}
 
 async function installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string, filename:string, command: string){
     return new Promise(async (resolve, reject) => {
@@ -24,25 +43,27 @@ async function installEleventyIfPkgManagerFound(eleventyVersion: string, project
 }
 export async function ensureEleventyExists(projectRoot: string, eleventyVersion: string) : Promise<string> {
     return new Promise(async (resolve, reject) => {
-        const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion)
-        try {
-            await access(eleventyDir);
-            resolve(eleventyDir)
-        } catch {
+        const versions = determineInstalledEleventyVersions(projectRoot)
+        if (Object.keys(versions).includes(eleventyVersion)) {
+            resolve(versions[eleventyVersion]);
+        } else {
             console.log(`Eleventy version ${eleventyVersion} could not be found. Installing...`)
-            
+            const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion);
             if (await installEleventyIfPkgManagerFound(
                 eleventyVersion, projectRoot, "package-lock.json", "npm install --save-dev")
             ) {
-            resolve(eleventyDir);
+                resolve(eleventyDir);
             } else if (await installEleventyIfPkgManagerFound(
                 eleventyVersion, projectRoot, "yarn.lock", "yarn add -D"
             )) {
-            resolve(eleventyDir);
+                resolve(eleventyDir);
             } else {
                 throw new Error(`Error while installing eleventy${eleventyVersion}: Could not determine package manager`);
             }
+            
         }
+            
+
     })
 }
 

@@ -4,7 +4,7 @@ import { readdir, access } from "fs/promises";
 import { get } from "https";
 
 import ScenarioOutput from "./ScenarioOutput";
-import { buildEleventy } from "./eleventyUtils";
+import { buildEleventy, determineInstalledEleventyVersions } from "./eleventyUtils";
 
 export * from "./eleventyUtils";
 
