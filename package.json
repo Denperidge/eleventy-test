@@ -15,7 +15,7 @@
     "build": "npm-run-all --serial build:js build:types",
     "build:js": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",
     "build:types": "tsc --declaration src/index.ts --emitDeclarationOnly --outDir ./dist",
-    "test": "ava tests/test.mjs --timeout=30s"
+    "test": "ava tests/test.mjs --timeout=90s"
   },
   "devDependencies": {
     "@11ty/eleventy1.0.2": "npm:@11ty/eleventy@1.0.2",

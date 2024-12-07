@@ -85,8 +85,7 @@ export async function buildEleventy({
             })
 
             out.on("close", async (code) => {
-                const output = await (new ScenarioOutput(outputDir, scenarioName)).loadFiles();
-                resolve(output);
+                resolve(new ScenarioOutput(outputDir, scenarioName));
             });
         } catch (e) {
             throw e;

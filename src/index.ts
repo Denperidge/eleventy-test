@@ -1,6 +1,7 @@
 import { cwd } from "process";
 import { join, isAbsolute } from "path";
 import { readdir, access } from "fs/promises";
+import { get } from "https";
 
 import ScenarioOutput from "./ScenarioOutput";
 import { buildEleventy } from "./eleventyUtils";
@@ -16,7 +17,31 @@ async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<strin
     if (eleventyVersion.length < 5) {
         const scenarioMajorVersion = scenarioDirname[0];
         if (versions == undefined) {
-            versions = await (await fetch("https://api.github.com/repos/11ty/eleventy/tags")).json();
+            console.log("Pulling Eleventy tags...")
+            versions = await new Promise((resolve, reject)=> {
+                get({
+                    
+                    hostname: "api.github.com",
+                    path: "/repos/11ty/eleventy/tags",
+                    headers: {
+                        "User-Agent": "Mozilla/5.0"
+                    }
+                }, (res)=> {
+                    let data: Buffer[] = [];
+                    res.on("data", chunk => {
+                        data.push(chunk);
+                    }).on("end", () => {
+                        console.log("Parsing API response...")
+                        resolve(
+                            JSON.parse(
+                                Buffer.concat(data).toString("utf-8")
+                            )
+                        )
+                    }).on("error", (err) => {
+                        throw err;
+                    })
+                });
+            });
         }
         for (let i=0; i < versions.length; i++) {
             const version = versions[i];
@@ -46,9 +71,11 @@ export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scena
             const scenarioDirs = await readdir(scenariosDir, {recursive: false, encoding: "utf-8"});            
             const scenarioOutputs: ScenarioOutput[] = [];
         
-            scenarioDirs.forEach(async (scenarioDirname) => {
+            for (let i=0 ; i < scenarioDirs.length; i++) {
+                const scenarioDirname = scenarioDirs[i]
                 const scenarioDir = join(scenariosDir, scenarioDirname)
                 let scenarioEleventyVersion = await scenarioDirnameToEleventyVersion(scenarioDirname)
+                
                 scenarioOutputs.push(await buildEleventy({
                     eleventyVersion: scenarioEleventyVersion,
                     scenarioName: scenarioDirname,
@@ -56,7 +83,7 @@ export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scena
                     projectRoot,
                     scenarioDir,
                 }))
-            });
+            }
             if (returnArray) {
                 resolve(scenarioOutputs)
             } else {
@@ -74,5 +101,5 @@ export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scena
 }
 
 if (require.main === module) {
-    buildScenarios(cwd());
+    buildScenarios(cwd())
 }
