@@ -1,22 +1,24 @@
-import {join } from "path";
-import {  lstatSync, readFileSync, readdirSync } from "fs";
+import { join } from "path";
+import { stat, readFile, readdir } from "fs/promises";
 
-export function recursiveFindFiles(dir: string, files:string[]=[]) {
+export async function recursiveFindFiles(dir: string, files:string[]=[]) {
     const foundDirs: string[] = [];
-    readdirSync(dir).forEach(name => {
+    const contents = await readdir(dir, {encoding: "utf-8"});
+    contents.forEach(async (name) => {
         const path = join(dir, name)
-        const stat = lstatSync(path);
-        if (stat.isDirectory()) {
-            foundDirs.push(path);
-        } else if (stat.isFile()) {
-            files.push(path);
-        }
+        try {
+            const stats = await stat(path);
+            if (stats.isDirectory()) {
+                foundDirs.push(path);
+            } else if (stats.isFile()) {
+                files.push(path);
+            }
+        } catch {}
     });
 
-    foundDirs.forEach((dir) => {
-        files = recursiveFindFiles(dir, files)
+    foundDirs.forEach(async (dir) => {
+        files = await recursiveFindFiles(dir, files)
     });
-
 
     return files;
 }
@@ -24,7 +26,7 @@ export function recursiveFindFiles(dir: string, files:string[]=[]) {
 export default class ScenarioOutput {
     eleventyOutputDir: string;
     title: string;
-    private _files: {[key: string]: () => string};
+    private _files: {[key: string]: Promise<string>};
     private cache: {[key: string]: string};
 
     constructor(pEleventyOutputDir: string, pTitle: string) {
@@ -32,20 +34,33 @@ export default class ScenarioOutput {
         this.cache = {};
         this.title = pTitle;
         this.eleventyOutputDir = pEleventyOutputDir;
-        recursiveFindFiles(this.eleventyOutputDir).forEach((filepath: string) => {
-            this._files[filepath.replace(this.eleventyOutputDir, "")] = function() {
-                return readFileSync(filepath, {encoding: "utf-8"})
-            }
-        })
     }
+
     get files() {
         return this._files;
     }
 
-    getFileContent(filename): string {
-        if (!Object.keys(this.cache).includes(filename)) {
-            this.cache[filename] = this._files[filename]();
-        }
-        return this.cache[filename];
+    async loadFiles() {
+        return new Promise<ScenarioOutput>(async (resolve, reject) => {
+            const files = await recursiveFindFiles(this.eleventyOutputDir);
+        
+            files.forEach((filepath: string) => {
+                this._files[filepath.replace(this.eleventyOutputDir, "")] = 
+                    new Promise(async (resolve, reject) => {
+                        resolve(await readFile(filepath, {encoding: "utf-8"}));
+                    });
+            });
+            resolve(this)
+        });
+    }
+
+    getFileContent(filename): Promise<string> {
+        return new Promise(async (resolve, reject) => {
+            if (!Object.keys(this.cache).includes(filename)) {
+                this.cache[filename] = await this._files[filename];
+            }
+            resolve(this.cache[filename]);
+        })
+
     }
 }

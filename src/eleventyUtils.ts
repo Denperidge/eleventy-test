@@ -1,30 +1,36 @@
-import { execSync, fork } from "child_process";
-import { readFileSync, rmSync, existsSync } from "fs";
+import { exec, fork } from "child_process";
+import { readFile, rm, access } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
 
 import ScenarioOutput from "./ScenarioOutput";
 
-function installEleventy(eleventyVersion: string, cwd: string, command){
+async function installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string, filename:string, command: string){
     try {
-        execSync(`${command} @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:cwd})
-    } catch (e) {
-        console.error(`Couldn't install eleventy ${eleventyVersion} using yarn`)
-        throw e;
+        await access(join(projectRoot, filename))
+        await exec(`${command} @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:projectRoot})
+        return true;
+    } catch {
+        console.error(`Couldn't install eleventy ${eleventyVersion} using ${command.split(" ")[0]}`);
+        return false;
     }
 }
-
-export function ensureEleventyExists(projectRoot: string, eleventyVersion: string) {
+export async function ensureEleventyExists(projectRoot: string, eleventyVersion: string) {
     const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion)
-    if (existsSync(eleventyDir)) {
+    try {
+        await access(eleventyDir);
         return eleventyDir;
-    } else {
+    } catch {
         console.log(`Eleventy version ${eleventyVersion} could not be found. Installing...`)
-        if (existsSync(join(projectRoot, "package-lock.json"))) {
-            installEleventy(eleventyVersion, projectRoot, "npm install --save-dev")
-        } else if (existsSync(join(projectRoot, "yarn.lock"))) {
-            // Yarn is used
-            installEleventy(eleventyVersion, projectRoot, "yarn add -D")
+        
+        if (await installEleventyIfPkgManagerFound(
+            eleventyVersion, projectRoot, "package-lock.json", "npm install --save-dev")
+        ) {
+            // Pass
+        } else if (await installEleventyIfPkgManagerFound(
+            eleventyVersion, projectRoot, "yarn.lock", "yarn add -D"
+        )) {
+            // Pass
         } else {
             throw new Error(`Error while installing eleventy${eleventyVersion}: Could not determine package manager`);
         }
@@ -40,23 +46,34 @@ export async function buildEleventy({
     projectRoot=cwd(),
     globalInputDir
 }) : Promise<ScenarioOutput> {
-    return new Promise((resolve, reject)=> {
-        const eleventyDir = ensureEleventyExists(projectRoot, eleventyVersion);
+    return new Promise(async (resolve, reject)=> {
+        const eleventyDir = await ensureEleventyExists(projectRoot, eleventyVersion);
 
         const bin = JSON.parse(
-            readFileSync(
+            await readFile(
                 join(eleventyDir, "package.json"),
-                {encoding: "utf-8"})
-            ).bin.eleventy;
+                {encoding: "utf-8"}
+            )).bin.eleventy;
         const pathToBin = join(eleventyDir, bin);
         
         const scenarioInputDir = join(scenarioDir, "input");
-        const inputDir = existsSync(scenarioInputDir) ? scenarioInputDir : globalInputDir;
+        let inputDir: string|undefined;
+        try {
+            await access(scenarioInputDir);
+            inputDir = scenarioInputDir;
+        } catch {
+            try {
+                await access(globalInputDir);
+                inputDir = globalInputDir;
+            } catch {
+            }
+        }
         if (inputDir == undefined) {
             throw Error("inputDir is undefined!")
         }
+
         const outputDir = join(scenarioDir, "eleventy-test-out")
-        rmSync(outputDir, {force: true, recursive: true})
+        await rm(outputDir, {force: true, recursive: true})
 
         try {
             const out = fork(
@@ -67,21 +84,12 @@ export async function buildEleventy({
                 console.log(msg)
             })
 
-            out.on("close", (code) => {
-                /*
-                console.log("Code: " + code);
-                console.log(out.stdout)
-                console.log(out.stderr)
-                */
-                const output = new ScenarioOutput(outputDir, scenarioName)
+            out.on("close", async (code) => {
+                const output = await (new ScenarioOutput(outputDir, scenarioName)).loadFiles();
                 resolve(output);
             });
-            
-            //const out = execFile("node", ["--version"], {cwd: scenarioDir, encoding: "utf-8"});
-        // console.log(out)
         } catch (e) {
             throw e;
         }
     })
-
 }
