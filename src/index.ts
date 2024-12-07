@@ -55,9 +55,22 @@ async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<strin
     return eleventyVersion;
 }
 
-export async function buildScenarios(projectRoot: string, returnArray?:true, scenariosDir?: string, globalInputDir?: string): Promise<ScenarioOutput[]>;
-export async function buildScenarios(projectRoot: string, returnArray?:false, scenariosDir?: string, globalInputDir?: string): Promise<{[key:string]: ScenarioOutput}>;
-export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input") {
+interface IbuildScenariosArgs {
+    projectRoot: string,
+    returnArray?: boolean,
+    scenariosDir?: string,
+    globalInputDir?: string
+}
+interface IbuildScenariosArrayArgs extends IbuildScenariosArgs {
+    returnArray?: true,
+}
+interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
+    returnArray?: false,
+}
+
+export async function buildScenarios(opts: IbuildScenariosArrayArgs): Promise<ScenarioOutput[]>;
+export async function buildScenarios(opts: IbuildScenariosDictArgs): Promise<{[key:string]: ScenarioOutput}>;
+export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input"}) {
     return new Promise(async (resolve, reject) => {
         scenariosDir = isAbsolute(scenariosDir) ? scenariosDir : join(projectRoot, scenariosDir);
         globalInputDir = isAbsolute(globalInputDir) ? globalInputDir : join(projectRoot, globalInputDir);
@@ -101,5 +114,7 @@ export async function buildScenarios(projectRoot=cwd(),  returnArray=true, scena
 }
 
 if (require.main === module) {
-    buildScenarios(cwd())
+    buildScenarios({
+        projectRoot: cwd()
+    });
 }

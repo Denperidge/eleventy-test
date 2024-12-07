@@ -7,7 +7,10 @@ function getDom(input) {
     return new JSDOM(input).window.document;
 }
 
-const results = await buildScenarios(cwd(), false);
+const results = await buildScenarios({
+    projectRoot: cwd(),
+    returnArray: false
+});
 
 test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", async t => {
     t.deepEqual(
