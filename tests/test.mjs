@@ -15,7 +15,7 @@ const results = await buildScenarios({
 test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", async t => {
     t.deepEqual(
         await results["3--cjs-builds"].getFileContent("/index.html"), 
-        await results["3--esm-builds"].getFileContent("/index.html")
+        await results["3.0.0--esm-builds"].getFileContent("/index.html")
     );
 });
 

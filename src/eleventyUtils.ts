@@ -43,7 +43,7 @@ async function installEleventyIfPkgManagerFound(eleventyVersion: string, project
 }
 export async function ensureEleventyExists(projectRoot: string, eleventyVersion: string) : Promise<string> {
     return new Promise(async (resolve, reject) => {
-        const versions = determineInstalledEleventyVersions(projectRoot)
+        const versions = await determineInstalledEleventyVersions(projectRoot)
         if (Object.keys(versions).includes(eleventyVersion)) {
             resolve(versions[eleventyVersion]);
         } else {
