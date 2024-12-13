@@ -1,5 +1,5 @@
 import { execSync, fork } from "child_process";
-import { existsSync } from "fs";
+import { existsSync, constants } from "fs";
 import { readFile, rm, access, readdir } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
@@ -7,25 +7,30 @@ import debug from "./debug";
 import ScenarioOutput from "./ScenarioOutput";
 
 export async function determineInstalledEleventyVersions(projectRoot: string=cwd()) {
-    debug("Determining installed Eleventy versions...")
-    let eleventyPkgs = await readdir(join(projectRoot, "node_modules/@11ty/"));
-    debug(`Found the followintg installed packages from @11ty: ${eleventyPkgs}`);
-    const eleventyRegex = new RegExp(/eleventy(\d|$)/m)
-    eleventyPkgs = eleventyPkgs.filter(name => eleventyRegex.test(name))
-
-    debug(`Filtered non-main-eleventy packages. Results: ${eleventyPkgs}`)
-
+    const eleventyPkgsDir = join(projectRoot, "node_modules/@11ty/")
     const versions: {[key:string]: string} = {};
-    for (let i=0; i < eleventyPkgs.length; i++) {
-        const eleventyPkg = eleventyPkgs[i];
-        const eleventyPkgDir = join(projectRoot, "node_modules/@11ty/", eleventyPkg)
-        const version = JSON.parse(
-            await readFile(
-                join(eleventyPkgDir, "package.json"), 
-                {encoding: "utf-8"}
-            )).version;
-            versions[version] = eleventyPkgDir;
-            debug(`Found ${version} at ${eleventyPkgDir}`)
+
+    debug("Determining installed Eleventy versions in " + eleventyPkgsDir)
+    
+    if (existsSync(eleventyPkgsDir)) {
+        let eleventyPkgs = await readdir(eleventyPkgsDir);
+        debug(`Found the followintg installed packages from @11ty: ${eleventyPkgs}`);
+        const eleventyRegex = new RegExp(/eleventy(\d|$)/m)
+        eleventyPkgs = eleventyPkgs.filter(name => eleventyRegex.test(name))
+
+        debug(`Filtered non-main-eleventy packages. Results: ${eleventyPkgs}`)
+
+        for (let i=0; i < eleventyPkgs.length; i++) {
+            const eleventyPkg = eleventyPkgs[i];
+            const eleventyPkgDir = join(projectRoot, "node_modules/@11ty/", eleventyPkg)
+            const version = JSON.parse(
+                await readFile(
+                    join(eleventyPkgDir, "package.json"), 
+                    {encoding: "utf-8"}
+                )).version;
+                versions[version] = eleventyPkgDir;
+                debug(`Found ${version} at ${eleventyPkgDir}`)
+        }
     }
     return versions;
 }
@@ -97,22 +102,17 @@ export async function buildEleventy({
         
         const scenarioInputDir = join(scenarioDir, "input");
         let inputDir: string|undefined;
-        try {
-            debug("Checking whether to use scenario input...")
-            await access(scenarioInputDir);
+        debug(`Checking whether to use scenario (${scenarioInputDir}) or global input (${globalInputDir})...`)
+        if (existsSync(scenarioInputDir)) {
             debug("Using scenario input")
             inputDir = scenarioInputDir;
-        } catch {
-            try {
-                debug("Checking whether the global input dir can be used...")
-                await access(globalInputDir);
-                debug("Using global input dir")
-                inputDir = globalInputDir;
-            } catch {
-            }
+        } else if (existsSync(globalInputDir)) {
+            debug("Using global input dir")
+            inputDir = globalInputDir;
         }
+        debug("inputDir: " + inputDir)
         if (inputDir == undefined) {
-            throw Error("inputDir is undefined! Either create a global input dir or one for the scenario specifically")
+            throw new Error("inputDir is undefined! Either create a global input dir or one for the scenario specifically")
         }
 
         const outputDir = join(scenarioDir, "eleventy-test-out")

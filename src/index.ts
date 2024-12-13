@@ -6,6 +6,7 @@ import { get } from "https";
 import ScenarioOutput from "./ScenarioOutput";
 import { buildEleventy, determineInstalledEleventyVersions } from "./eleventyUtils";
 import debug, { setDebug } from "./debug";
+import { existsSync } from "fs";
 
 export * from "./eleventyUtils";
 
@@ -66,7 +67,7 @@ interface IbuildScenariosArgs {
     projectRoot: string,
     returnArray?: boolean,
     scenariosDir?: string,
-    globalInputDir?: string
+    globalInputDir?: string,
     enableDebug?: boolean
 }
 interface IbuildScenariosArrayArgs extends IbuildScenariosArgs {
@@ -78,17 +79,16 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
 
 export async function buildScenarios(opts: IbuildScenariosArrayArgs): Promise<ScenarioOutput[]>;
 export async function buildScenarios(opts: IbuildScenariosDictArgs): Promise<{[key:string]: ScenarioOutput}>;
-export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input", enableDebug=false}) {
+export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir: passedGlobalInputDir="tests/input", enableDebug=false}) {
     setDebug(enableDebug);
     debug("If you can see this, debugging has been enabled. Starting buildScenarios")
 
     return new Promise(async (resolve, reject) => {
         scenariosDir = isAbsolute(scenariosDir) ? scenariosDir : join(projectRoot, scenariosDir);
-        globalInputDir = isAbsolute(globalInputDir) ? globalInputDir : join(projectRoot, globalInputDir);
-        try { 
-            await access(globalInputDir);
-        } catch {
-            globalInputDir = "undefined";
+        let globalInputDir = (isAbsolute(passedGlobalInputDir) ? passedGlobalInputDir : join(projectRoot, passedGlobalInputDir)) as string|undefined;
+        // TODO: fix this extra variable stuff
+        if (globalInputDir) {
+            globalInputDir = existsSync(globalInputDir) ? globalInputDir : undefined;
         }
         debug(`scenariosDir: ${scenariosDir}`, `globalInputDir: ${globalInputDir}`)
 
