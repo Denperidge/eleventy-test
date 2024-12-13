@@ -5,6 +5,7 @@ import { get } from "https";
 
 import ScenarioOutput from "./ScenarioOutput";
 import { buildEleventy, determineInstalledEleventyVersions } from "./eleventyUtils";
+import debug, { setDebug } from "./debug";
 
 export * from "./eleventyUtils";
 
@@ -14,10 +15,14 @@ async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<strin
     // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
     let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
 
+    debug(`eleventyVersion from dirname: ${eleventyVersion}`);
+
     if (eleventyVersion.length < 5) {
+        debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
         const scenarioMajorVersion = scenarioDirname[0];
         if (versions == undefined) {
-            console.log("Pulling Eleventy tags...")
+            
+            debug("Pulling Eleventy tags...")
             versions = await new Promise((resolve, reject)=> {
                 get({
                     
@@ -31,7 +36,7 @@ async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<strin
                     res.on("data", chunk => {
                         data.push(chunk);
                     }).on("end", () => {
-                        console.log("Parsing API response...")
+                        debug("Parsing Eleventy tags API response...")
                         resolve(
                             JSON.parse(
                                 Buffer.concat(data).toString("utf-8")
@@ -45,9 +50,11 @@ async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<strin
         }
         for (let i=0; i < versions.length; i++) {
             const version = versions[i];
+            debug("Checking " + version);
             // When auto-selecting, choose a non-alpha/canary build
             if (!version.name.includes("-") && version.name[1] == scenarioMajorVersion) {
                 eleventyVersion = version.name.substring(1);
+                debug("Determined latest of relevant major version for: " + eleventyVersion)
                 break;
             }
         }
@@ -60,6 +67,7 @@ interface IbuildScenariosArgs {
     returnArray?: boolean,
     scenariosDir?: string,
     globalInputDir?: string
+    enableDebug?: boolean
 }
 interface IbuildScenariosArrayArgs extends IbuildScenariosArgs {
     returnArray?: true,
@@ -70,7 +78,10 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
 
 export async function buildScenarios(opts: IbuildScenariosArrayArgs): Promise<ScenarioOutput[]>;
 export async function buildScenarios(opts: IbuildScenariosDictArgs): Promise<{[key:string]: ScenarioOutput}>;
-export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input"}) {
+export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input", enableDebug=false}) {
+    setDebug(enableDebug);
+    debug("If you can see this, debugging has been enabled. Starting buildScenarios")
+
     return new Promise(async (resolve, reject) => {
         scenariosDir = isAbsolute(scenariosDir) ? scenariosDir : join(projectRoot, scenariosDir);
         globalInputDir = isAbsolute(globalInputDir) ? globalInputDir : join(projectRoot, globalInputDir);
@@ -79,16 +90,22 @@ export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scen
         } catch {
             globalInputDir = "undefined";
         }
+        debug(`scenariosDir: ${scenariosDir}`, `globalInputDir: ${globalInputDir}`)
 
         try {
             const scenarioDirs = await readdir(scenariosDir, {recursive: false, encoding: "utf-8"});            
             const scenarioOutputs: ScenarioOutput[] = [];
+
+            debug(`Found scenario dirs: ${scenarioDirs}`)
         
             for (let i=0 ; i < scenarioDirs.length; i++) {
                 const scenarioDirname = scenarioDirs[i]
                 const scenarioDir = join(scenariosDir, scenarioDirname)
+                debug("Parsing Eleventy version of scenario " + scenarioDirname);
                 let scenarioEleventyVersion = await scenarioDirnameToEleventyVersion(scenarioDirname)
                 
+                debug("Determined Eleventy version: " + scenarioEleventyVersion)
+
                 scenarioOutputs.push(await buildEleventy({
                     eleventyVersion: scenarioEleventyVersion,
                     scenarioName: scenarioDirname,
@@ -98,8 +115,10 @@ export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scen
                 }))
             }
             if (returnArray) {
+                debug("Returning as array...")
                 resolve(scenarioOutputs)
             } else {
+                debug("Returning as object...")
                 const returnDict: {[key: string]: ScenarioOutput} = {};
                 scenarioOutputs.forEach((scenarioOutput) => {
                     returnDict[scenarioOutput.title] = scenarioOutput;
@@ -115,6 +134,7 @@ export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scen
 
 if (require.main === module) {
     buildScenarios({
-        projectRoot: cwd()
+        projectRoot: cwd(),
+        enableDebug: true
     });
 }
