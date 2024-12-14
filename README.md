@@ -26,7 +26,8 @@ Want to see how it is in action? For the dogfooding fans, you can see this libra
 
     const resultsAsDict = await buildScenarios({
         projectRoot: cwd(),
-        returnArray: false
+        returnArray: false,
+        enableDebug: false
     });
 
     test("Check if index.html is consistent across builds", async t => {

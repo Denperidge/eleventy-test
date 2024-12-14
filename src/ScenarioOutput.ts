@@ -46,6 +46,9 @@ export default class ScenarioOutput {
 
     getFileContent(filename): Promise<string> {
         return new Promise(async (resolve, reject) => {
+            if (!Object.keys(this._files).includes(filename)) {
+                throw new Error(`Can't find "${filename}" in files. Available files: ${Object.keys(this._files).join(", ")}`)
+            }
             if (!Object.keys(this.cache).includes(filename)) {
                 this.cache[filename] = this._files[filename]();
             }
