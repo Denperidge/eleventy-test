@@ -15,7 +15,7 @@ const results = await buildScenarios({
 test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", async t => {
     t.deepEqual(
         await results["3--cjs-builds"].getFileContent("/index.html"), 
-        await results["3.0.0--esm-builds"].getFileContent("/index.html")
+        await results["3--esm-builds"].getFileContent("/index.html")
     );
 });
 
@@ -51,7 +51,11 @@ test("The specified Eleventy versions are used (found correct values for [meta n
                 }
                 break;
             case "3":
-                expectedGenerator = "Eleventy v3.0.0";
+                if (scenarioTitle.includes("3.0.0")) {
+                    expectedGenerator = "Eleventy v3.0.0";
+                } else {
+                    expectedGenerator = "Eleventy v3.1.2";
+                }
                 break;
             default:
                 throw Error("Could not determine Eleventy version")
