@@ -1,3 +1,9 @@
+/**
+ * Functions for debug logging
+ * - enable/disable debug logs: @see setDebug
+ * - log to console if debugging is enabled: @see debug
+ */
+
 let debugEnabled = false;
 
 /**

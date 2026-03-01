@@ -1,5 +1,10 @@
+/**
+ * Entrypoint & highest-level functions
+ * - Detecting needed eleventy versions for scenarios @see _scenarioDirnameToEleventyVersion
+ * - Building all scenarios in a project @see buildScenarios
+ * - Providing yarn start functionality
+ */
 import { join, isAbsolute } from "path";
-import { existsSync } from "fs";
 import { cwd } from "process";
 import { readdir } from "fs/promises";
 import { get } from "https";

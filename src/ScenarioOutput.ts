@@ -1,3 +1,8 @@
+/**
+ * Functions to assist with collecting & reading of eleventy test outputs
+ * - Recursive file finder function @see _recursiveFindFiles
+ * - Class that turns a dir path into an easy file lister/reader @see ScenarioOutput
+ */
 import { join } from "path";
 import { readdirSync, readFileSync, lstatSync } from "fs";
 
