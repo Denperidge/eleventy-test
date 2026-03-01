@@ -17,7 +17,7 @@ import debug from "./debug";
 import ScenarioOutput from "./ScenarioOutput";
 
 export interface _IbuildEleventyArgs {
-    projectRoot: string,
+    projectRoot?: string,
     globalInputDir?: string,
     scenarioDir: string,
     scenarioName: string
@@ -25,7 +25,8 @@ export interface _IbuildEleventyArgs {
 
 /**
  * 
- * @param projectRoot project root directory of which to check the node_modules/ dir
+ * @param projectRoot project root directory of which to check the node_modules/ dir. 
+ * @default process.cwd()
  * @returns promise for a dictionary in the style of {"3.0.0": "/path/to/@11ty/eleventy3.0.0"}
  */
 export async function _determineInstalledEleventyVersions(projectRoot: string=cwd()) {
@@ -131,11 +132,13 @@ async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<stri
  * 
  * @param eleventyVersion semantic version to look for (for example: "3", "3.1.2")
  * @param projectRoot project root directory
+ * @default process.cwd()
+ * 
  * @param filename if filename exists, use install command below (for example: "package-lock.json", "yarn.lock")
  * @param command command to prefix to install eleventy (for example: "yarn add", "npm install")
  * @returns promise for false/true, depending on whether eleventy install was succesful
  */
-async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string, filename:string, command: string): Promise<boolean> {
+async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string=cwd(), filename:string, command: string): Promise<boolean> {
     debug(`Attempting to find a package manager to install Eleventy ${eleventyVersion} with`)
     return new Promise(async (resolve, reject) => {
         if (existsSync(join(projectRoot, filename))) {
@@ -159,9 +162,10 @@ async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projec
  * 
  * @param eleventyVersion semantic version to look for (for example "3", "3.0.0")
  * @param projectRoot project root directory
+ * @default process.cwd()
  * @returns promise for the install directory of specified eleventy version
  */
-export async function _ensureEleventyExists(eleventyVersion: string, projectRoot: string) : Promise<string> {
+export async function _ensureEleventyExists(eleventyVersion: string, projectRoot: string=cwd()) : Promise<string> {
     debug(`Ensuring Eleventy ${eleventyVersion} exists`)
     return new Promise(async (resolve, reject) => {
         const versions = await _determineInstalledEleventyVersions(projectRoot)
@@ -191,6 +195,7 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
  * @param scenarioDir path towards directory that holds all test scenarios
  * @param scenarioName name of the test scenario to run
  * @param projectRoot project root directory
+ * @default process.cwd()
  * @param globalInputDir path to the input directory to be used if scenarios do not provide their own
  * 
  * @returns promise for the resulting @see ScenarioOutput

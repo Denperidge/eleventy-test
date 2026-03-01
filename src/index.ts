@@ -14,7 +14,7 @@ import debug, { setDebug } from "./debug";
 export * from "./eleventyUtils";
 
 interface IbuildScenariosArgs {
-    projectRoot: string,
+    projectRoot?: string,
     returnArray?: boolean,
     scenariosDir?: string,
     globalInputDir?: string,
@@ -30,6 +30,7 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
 /**
  * **Note:** the below arguments need to be passed in an object. @see IbuildScenariosArgs
  * @param projectRoot project root directory
+ * @default process.cwd()
  * @param returnArray if set to true, return array
  * @param scenariosDir path to directory that holds all scenarios 
  * @param globalInputDir path to the input directory to be used if scenarios do not provide their own
