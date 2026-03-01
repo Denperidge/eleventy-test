@@ -135,7 +135,7 @@ export async function buildEleventy({
     return new Promise(async (resolve, reject)=> {
         debug("Finding package for Eleventy " + eleventyVersion);
         const eleventyDir = await _ensureEleventyExists(eleventyVersion, projectRoot);
-        debug("Found pacakge for Eleventy " + eleventyVersion);
+        debug("Found package for Eleventy " + eleventyVersion);
 
         const bin = JSON.parse(
             await readFile(
