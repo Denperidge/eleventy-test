@@ -1,6 +1,7 @@
 /**
  * Functions for internal Eleventy handling
  * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions 
+ * - Detecting needed eleventy versions for scenarios @see _dirnameToEleventyVersion
  * - Installing Eleventy versions @see _installEleventyIfPkgManagerFound
  * - The combination of the two funcs above @see _ensureEleventyExists
  * - Running Eleventy Build @see buildEleventy
@@ -10,11 +11,12 @@ import { existsSync } from "fs";
 import { readFile, rm, readdir } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
+import { get } from "https";
+
 import debug from "./debug";
 import ScenarioOutput from "./ScenarioOutput";
 
 export interface _IbuildEleventyArgs {
-    eleventyVersion: string,
     projectRoot: string,
     globalInputDir?: string,
     scenarioDir: string,
@@ -54,6 +56,76 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
     }
     return versions;
 }
+
+
+interface IgitHubApiTags {
+    name: string,
+    zipball_url: string,
+    tarball_url: string,
+    node_id: string,
+    commit: {
+        sha: string,
+        url: string
+    }
+}
+let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest eleventy versions
+
+/**
+ * 
+ * @param scenarioDirname directory name from the scenario
+ * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
+ */
+async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
+    // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
+    let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
+
+    debug(`eleventyVersion from dirname: ${eleventyVersion}`);
+
+    if (eleventyVersion.length < 5) {
+        debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
+        const scenarioMajorVersion = scenarioDirname[0];
+        if (versions == undefined) {
+            
+            debug("Pulling Eleventy tags...")
+            versions = await new Promise((resolve, reject)=> {
+                get({
+                    
+                    hostname: "api.github.com",
+                    path: "/repos/11ty/eleventy/tags",
+                    headers: {
+                        "User-Agent": "Mozilla/5.0"
+                    }
+                }, (res)=> {
+                    let data: Buffer[] = [];
+                    res.on("data", chunk => {
+                        data.push(chunk);
+                    }).on("end", () => {
+                        debug("Parsing Eleventy tags API response...")
+                        resolve(
+                            JSON.parse(
+                                Buffer.concat(data).toString("utf-8")
+                            )
+                        )
+                    }).on("error", (err) => {
+                        throw err;
+                    })
+                });
+            });
+        }
+        for (let i=0; i < versions.length; i++) {
+            const version = versions[i];
+            debug("Checking " + version);
+            // When auto-selecting, choose a non-alpha/canary build
+            if (!version.name.includes("-") && version.name[1] == scenarioMajorVersion) {
+                eleventyVersion = version.name.substring(1);
+                debug("Determined latest of relevant major version for: " + eleventyVersion)
+                break;
+            }
+        }
+    }
+    return eleventyVersion;
+}
+
 
 /**
  * 
@@ -116,7 +188,6 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
 /**
  * **Note:** the below arguments need to be passed in an object. @see _IbuildEleventyArgs
  * 
- * @param eleventyVersion semantic version to look for (for example: "3", "3.1.2")
  * @param scenarioDir path towards directory that holds all test scenarios
  * @param scenarioName name of the test scenario to run
  * @param projectRoot project root directory
@@ -125,12 +196,14 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
  * @returns promise for the resulting @see ScenarioOutput
  */
 export async function buildEleventy({
-    eleventyVersion,
     projectRoot=cwd(),
     globalInputDir,
     scenarioDir,
     scenarioName
 }: _IbuildEleventyArgs) : Promise<ScenarioOutput> {
+    debug("Parsing Eleventy version of scenario " + scenarioDir);
+    let eleventyVersion = await _dirnameToEleventyVersion(scenarioName)
+
     debug("Running buildEleventy", "scenarioDir: " + scenarioDir, "Eleventy version: " + eleventyVersion)
     return new Promise(async (resolve, reject)=> {
         debug("Finding package for Eleventy " + eleventyVersion);

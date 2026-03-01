@@ -1,88 +1,17 @@
 /**
  * Entrypoint & highest-level functions
- * - Detecting needed eleventy versions for scenarios @see _scenarioDirnameToEleventyVersion
  * - Building all scenarios in a project @see buildScenarios
  * - Providing yarn start functionality
  */
 import { join, isAbsolute } from "path";
 import { cwd } from "process";
 import { readdir } from "fs/promises";
-import { get } from "https";
 
 import ScenarioOutput from "./ScenarioOutput";
 import { buildEleventy, _determineInstalledEleventyVersions } from "./eleventyUtils";
 import debug, { setDebug } from "./debug";
 
 export * from "./eleventyUtils";
-
-export interface IgitHubApiTags {
-    name: string,
-    zipball_url: string,
-    tarball_url: string,
-    node_id: string,
-    commit: {
-        sha: string,
-        url: string
-    }
-}
-
-let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest eleventy versions
-
-/**
- * 
- * @param scenarioDirname directory name from the scenario
- * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
- */
-async function _scenarioDirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
-    // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
-    let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
-
-    debug(`eleventyVersion from dirname: ${eleventyVersion}`);
-
-    if (eleventyVersion.length < 5) {
-        debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
-        const scenarioMajorVersion = scenarioDirname[0];
-        if (versions == undefined) {
-            
-            debug("Pulling Eleventy tags...")
-            versions = await new Promise((resolve, reject)=> {
-                get({
-                    
-                    hostname: "api.github.com",
-                    path: "/repos/11ty/eleventy/tags",
-                    headers: {
-                        "User-Agent": "Mozilla/5.0"
-                    }
-                }, (res)=> {
-                    let data: Buffer[] = [];
-                    res.on("data", chunk => {
-                        data.push(chunk);
-                    }).on("end", () => {
-                        debug("Parsing Eleventy tags API response...")
-                        resolve(
-                            JSON.parse(
-                                Buffer.concat(data).toString("utf-8")
-                            )
-                        )
-                    }).on("error", (err) => {
-                        throw err;
-                    })
-                });
-            });
-        }
-        for (let i=0; i < versions.length; i++) {
-            const version = versions[i];
-            debug("Checking " + version);
-            // When auto-selecting, choose a non-alpha/canary build
-            if (!version.name.includes("-") && version.name[1] == scenarioMajorVersion) {
-                eleventyVersion = version.name.substring(1);
-                debug("Determined latest of relevant major version for: " + eleventyVersion)
-                break;
-            }
-        }
-    }
-    return eleventyVersion;
-}
 
 interface IbuildScenariosArgs {
     projectRoot: string,
@@ -133,13 +62,8 @@ export async function buildScenarios({projectRoot=cwd(), returnArray=true, scena
             for (let i=0 ; i < scenarioDirs.length; i++) {
                 const scenarioDirname = scenarioDirs[i]
                 const scenarioDir = join(scenariosDir, scenarioDirname)
-                debug("Parsing Eleventy version of scenario " + scenarioDirname);
-                let scenarioEleventyVersion = await _scenarioDirnameToEleventyVersion(scenarioDirname)
-                
-                debug("Determined Eleventy version: " + scenarioEleventyVersion)
 
                 scenarioOutputs.push(await buildEleventy({
-                    eleventyVersion: scenarioEleventyVersion,
                     projectRoot,
                     globalInputDir,
                     scenarioName: scenarioDirname,
