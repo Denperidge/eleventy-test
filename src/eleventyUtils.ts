@@ -16,13 +16,6 @@ import { get } from "https";
 import debug from "./debug";
 import ScenarioOutput from "./ScenarioOutput";
 
-export interface _IbuildEleventyArgs {
-    projectRoot?: string,
-    globalInputDir?: string,
-    scenarioDir: string,
-    scenarioName: string
-}
-
 /**
  * 
  * @param projectRoot project root directory of which to check the node_modules/ dir. 
@@ -187,6 +180,13 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
             }
         }
     })
+}
+
+export interface _IbuildEleventyArgs {
+    projectRoot?: string,
+    globalInputDir?: string,
+    scenarioDir: string,
+    scenarioName: string
 }
 
 /**
