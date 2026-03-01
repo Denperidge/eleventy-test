@@ -120,7 +120,7 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
  * @param scenarioDir path towards directory that holds all test scenarios
  * @param scenarioName name of the test scenario to run
  * @param projectRoot project root directory
- * @param globalInputDir input to be used if scenarios do not provide their own
+ * @param globalInputDir path to the input directory to be used if scenarios do not provide their own
  * 
  * @returns promise for the resulting @see ScenarioOutput
  */

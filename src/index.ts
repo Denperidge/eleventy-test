@@ -1,18 +1,34 @@
-import { cwd } from "process";
 import { join, isAbsolute } from "path";
-import { readdir, access } from "fs/promises";
+import { existsSync } from "fs";
+import { cwd } from "process";
+import { readdir } from "fs/promises";
 import { get } from "https";
 
 import ScenarioOutput from "./ScenarioOutput";
-import { buildEleventy, determineInstalledEleventyVersions } from "./eleventyUtils";
+import { buildEleventy, _determineInstalledEleventyVersions } from "./eleventyUtils";
 import debug, { setDebug } from "./debug";
-import { existsSync } from "fs";
 
 export * from "./eleventyUtils";
 
-let versions;  // Cache variable for determining latest eleventy versions
+export interface IgitHubApiTags {
+    name: string,
+    zipball_url: string,
+    tarball_url: string,
+    node_id: string,
+    commit: {
+        sha: string,
+        url: string
+    }
+}
 
-async function scenarioDirnameToEleventyVersion(scenarioDirname) : Promise<string> {
+let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest eleventy versions
+
+/**
+ * 
+ * @param scenarioDirname directory name from the scenario
+ * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
+ */
+async function _scenarioDirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
     // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
     let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
 
@@ -77,18 +93,29 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
     returnArray?: false,
 }
 
+/**
+ * **Note:** the below arguments need to be passed in an object. @see IbuildScenariosArgs
+ * @param projectRoot project root directory
+ * @param returnArray if set to true, return array
+ * @param scenariosDir path to directory that holds all scenarios 
+ * @param globalInputDir path to the input directory to be used if scenarios do not provide their own
+ * @param enableDebug enable debug logging if true
+ * 
+ * @returns (if returnArray=true) return scenario outputs as array
+ * @returns (if returnArray=false) return scenario outputs in a dict, using scenario names as key
+ */
 export async function buildScenarios(opts: IbuildScenariosArrayArgs): Promise<ScenarioOutput[]>;
 export async function buildScenarios(opts: IbuildScenariosDictArgs): Promise<{[key:string]: ScenarioOutput}>;
-export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scenariosDir="tests/scenarios/", globalInputDir: passedGlobalInputDir="tests/input", enableDebug=false}) {
+export async function buildScenarios({projectRoot=cwd(), returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input", enableDebug=false}) {
     setDebug(enableDebug);
     debug("If you can see this, debugging has been enabled. Starting buildScenarios")
 
     return new Promise(async (resolve, reject) => {
         scenariosDir = isAbsolute(scenariosDir) ? scenariosDir : join(projectRoot, scenariosDir);
-        let globalInputDir = (isAbsolute(passedGlobalInputDir) ? passedGlobalInputDir : join(projectRoot, passedGlobalInputDir)) as string|undefined;
-        // TODO: fix this extra variable stuff
+        // if globalInputDir is passed
         if (globalInputDir) {
-            globalInputDir = existsSync(globalInputDir) ? globalInputDir : undefined;
+            // Turn it into an absolute path
+            globalInputDir = isAbsolute(globalInputDir) ? globalInputDir : join(projectRoot, globalInputDir);
         }
         debug(`scenariosDir: ${scenariosDir}`, `globalInputDir: ${globalInputDir}`)
 
@@ -102,15 +129,15 @@ export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scen
                 const scenarioDirname = scenarioDirs[i]
                 const scenarioDir = join(scenariosDir, scenarioDirname)
                 debug("Parsing Eleventy version of scenario " + scenarioDirname);
-                let scenarioEleventyVersion = await scenarioDirnameToEleventyVersion(scenarioDirname)
+                let scenarioEleventyVersion = await _scenarioDirnameToEleventyVersion(scenarioDirname)
                 
                 debug("Determined Eleventy version: " + scenarioEleventyVersion)
 
                 scenarioOutputs.push(await buildEleventy({
                     eleventyVersion: scenarioEleventyVersion,
-                    scenarioName: scenarioDirname,
-                    globalInputDir,
                     projectRoot,
+                    globalInputDir,
+                    scenarioName: scenarioDirname,
                     scenarioDir,
                 }))
             }
@@ -132,6 +159,7 @@ export async function buildScenarios({projectRoot=cwd(),  returnArray=true, scen
     });
 }
 
+// If run directly using yarn start
 if (require.main === module) {
     buildScenarios({
         projectRoot: cwd(),
