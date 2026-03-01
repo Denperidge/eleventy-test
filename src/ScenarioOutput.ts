@@ -4,7 +4,7 @@
  * - Class that turns a dir path into an easy file lister/reader @see ScenarioOutput
  */
 import { join } from "path";
-import { readdirSync, readFileSync, lstatSync } from "fs";
+import { readdir, readFile, lstat } from "fs/promises";
 
 // TODO: Due to constructors not being allowed to be async,
 // some synchronous code still exists in this file. Would like to get rid of that
@@ -15,22 +15,23 @@ import { readdirSync, readFileSync, lstatSync } from "fs";
  * @param files currently found files
  * @returns promise for array of filepaths found in dir
  */
-export function _recursiveFindFiles(dir: string, files:string[]=[]) {
+export async function _recursiveFindFiles(dir: string, files: string[] = []): Promise<string[]> {
     const foundDirs: string[] = [];
-    readdirSync(dir).forEach(name => {
-        const path = join(dir, name)
-        const stat = lstatSync(path);
+    const entries = await readdir(dir);
+
+    await Promise.all(entries.map(async (name) => {
+        const path = join(dir, name);
+        const stat = await lstat(path);
         if (stat.isDirectory()) {
             foundDirs.push(path);
         } else if (stat.isFile()) {
             files.push(path);
         }
-    });
+    }));
 
-    foundDirs.forEach((dir) => {
-        files = _recursiveFindFiles(dir, files)
-    });
-
+    for (const subDir of foundDirs) {
+        files = await _recursiveFindFiles(subDir, files);
+    }
 
     return files;
 }
@@ -43,50 +44,52 @@ export default class ScenarioOutput {
     eleventyOutputDir: string;
     /** title of this scenario */
     title: string;
-    private _files: {[key: string]: () => string};
-    private cache: {[key: string]: string};
+    private _files: Set<string>;
+    private cache: { [key: string]: string };
+
+    constructor(pEleventyOutputDir: string, pTitle: string) {
+        this._files = new Set();
+        this.cache = {};
+        this.title = pTitle;
+        this.eleventyOutputDir = pEleventyOutputDir;
+    }
 
     /**
      * @param pEleventyOutputDir path to "eleventy-test-out"
      * @param pTitle scenario title
      */
-    constructor(pEleventyOutputDir: string, pTitle: string) {
-        this._files = {};
-        this.cache = {};
-        this.title = pTitle;
-        this.eleventyOutputDir = pEleventyOutputDir;
-        _recursiveFindFiles(this.eleventyOutputDir).forEach((filepath: string) => {
-            this._files[filepath.replace(this.eleventyOutputDir, "")] = function() {
-                return readFileSync(filepath, {encoding: "utf-8"})
-            }
-        })
+    static async create(pEleventyOutputDir: string, pTitle: string): Promise<ScenarioOutput> {
+        const instance = new ScenarioOutput(pEleventyOutputDir, pTitle);
+        const allFiles = await _recursiveFindFiles(instance.eleventyOutputDir);
+        for (const filepath of allFiles) {
+            instance._files.add(filepath.replace(instance.eleventyOutputDir, ""));
+        }
+        return instance;
     }
 
     /**
      * **Note:** unless you want filenames, you probably want getFileContent instead. @see getFileContent
-     * 
-     * @returns object with the following layout: {"relative/filename.html": function() => "file contents"}
+     *
+    * @returns object with the following layout: {"relative/filename.html": function() => "file contents"}
      */
-    get files() {
-        return this._files;
+    get files(): Record<string, null> {
+        return Array.from(this._files).reduce((acc, f) => ({ ...acc, [f]: null }), {} as Record<string, null>);
     }
 
     /**
      * Gets file contents from internal cache,
      * reading file contents into the cache if needed
-     * 
+     *
      * @param filepath relative path to file to read
      * @returns promise for text contents
      */
-    getFileContent(filepath: string): Promise<string> {
-        return new Promise(async (resolve, reject) => {
-            if (!Object.keys(this._files).includes(filepath)) {
-                throw new Error(`Can't find "${filepath}" in files. Available files: ${Object.keys(this._files).join(", ")}`)
-            }
-            if (!Object.keys(this.cache).includes(filepath)) {
-                this.cache[filepath] = this._files[filepath]();
-            }
-            resolve(this.cache[filepath]);
-        })
+    async getFileContent(filepath: string): Promise<string> {
+        if (!this._files.has(filepath)) {
+            throw new Error(`Can't find "${filepath}" in files. Available files: ${Array.from(this._files).join(", ")}`);
+        }
+        if (!(filepath in this.cache)) {
+            this.cache[filepath] = await readFile(join(this.eleventyOutputDir, filepath), { encoding: "utf-8" });
+        }
+        return this.cache[filepath];
     }
 }
