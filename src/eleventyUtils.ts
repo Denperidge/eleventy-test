@@ -1,12 +1,32 @@
+/**
+ * Functions for internal Eleventy handling
+ * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions 
+ * - Installing Eleventy versions @see _installEleventyIfPkgManagerFound
+ * - The combination of the two funcs above @see _ensureEleventyExists
+ * - Running Eleventy Build @see buildEleventy
+ */
 import { execSync, fork } from "child_process";
-import { existsSync, constants } from "fs";
-import { readFile, rm, access, readdir } from "fs/promises";
+import { existsSync } from "fs";
+import { readFile, rm, readdir } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
 import debug from "./debug";
 import ScenarioOutput from "./ScenarioOutput";
 
-export async function determineInstalledEleventyVersions(projectRoot: string=cwd()) {
+export interface _IbuildEleventyArgs {
+    eleventyVersion: string,
+    projectRoot: string,
+    globalInputDir?: string,
+    scenarioDir: string,
+    scenarioName: string
+}
+
+/**
+ * 
+ * @param projectRoot project root directory of which to check the node_modules/ dir
+ * @returns promise for a dictionary in the style of {"3.0.0": "/path/to/@11ty/eleventy3.0.0"}
+ */
+export async function _determineInstalledEleventyVersions(projectRoot: string=cwd()) {
     const eleventyPkgsDir = join(projectRoot, "node_modules/@11ty/")
     const versions: {[key:string]: string} = {};
 
@@ -14,7 +34,7 @@ export async function determineInstalledEleventyVersions(projectRoot: string=cwd
     
     if (existsSync(eleventyPkgsDir)) {
         let eleventyPkgs = await readdir(eleventyPkgsDir);
-        debug(`Found the followintg installed packages from @11ty: ${eleventyPkgs}`);
+        debug(`Found the following installed packages from @11ty: ${eleventyPkgs}`);
         const eleventyRegex = new RegExp(/eleventy(\d|$)/m)
         eleventyPkgs = eleventyPkgs.filter(name => eleventyRegex.test(name))
 
@@ -28,14 +48,22 @@ export async function determineInstalledEleventyVersions(projectRoot: string=cwd
                     join(eleventyPkgDir, "package.json"), 
                     {encoding: "utf-8"}
                 )).version;
-                versions[version] = eleventyPkgDir;
-                debug(`Found ${version} at ${eleventyPkgDir}`)
+            versions[version] = eleventyPkgDir;
+            debug(`Found ${version} at ${eleventyPkgDir}`)
         }
     }
     return versions;
 }
 
-async function installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string, filename:string, command: string){
+/**
+ * 
+ * @param eleventyVersion semantic version to look for (for example: "3", "3.1.2")
+ * @param projectRoot project root directory
+ * @param filename if filename exists, use install command below (for example: "package-lock.json", "yarn.lock")
+ * @param command command to prefix to install eleventy (for example: "yarn add", "npm install")
+ * @returns promise for false/true, depending on whether eleventy install was succesful
+ */
+async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string, filename:string, command: string): Promise<boolean> {
     debug(`Attempting to find a package manager to install Eleventy ${eleventyVersion} with`)
     return new Promise(async (resolve, reject) => {
         if (existsSync(join(projectRoot, filename))) {
@@ -54,20 +82,27 @@ async function installEleventyIfPkgManagerFound(eleventyVersion: string, project
         }
     });
 }
-export async function ensureEleventyExists(projectRoot: string, eleventyVersion: string) : Promise<string> {
+
+/**
+ * 
+ * @param eleventyVersion semantic version to look for (for example "3", "3.0.0")
+ * @param projectRoot project root directory
+ * @returns promise for the install directory of specified eleventy version
+ */
+export async function _ensureEleventyExists(eleventyVersion: string, projectRoot: string) : Promise<string> {
     debug(`Ensuring Eleventy ${eleventyVersion} exists`)
     return new Promise(async (resolve, reject) => {
-        const versions = await determineInstalledEleventyVersions(projectRoot)
+        const versions = await _determineInstalledEleventyVersions(projectRoot)
         if (Object.keys(versions).includes(eleventyVersion)) {
             resolve(versions[eleventyVersion]);
         } else {
             console.log(`Eleventy version ${eleventyVersion} could not be found. Installing...`)
             const eleventyDir = join(projectRoot, "node_modules/@11ty/eleventy" + eleventyVersion);
-            if (await installEleventyIfPkgManagerFound(
+            if (await _installEleventyIfPkgManagerFound(
                 eleventyVersion, projectRoot, "package-lock.json", "npm install --save-dev")
             ) {
                 resolve(eleventyDir);
-            } else if (await installEleventyIfPkgManagerFound(
+            } else if (await _installEleventyIfPkgManagerFound(
                 eleventyVersion, projectRoot, "yarn.lock", "yarn add -D"
             )) {
                 resolve(eleventyDir);
@@ -78,18 +113,28 @@ export async function ensureEleventyExists(projectRoot: string, eleventyVersion:
     })
 }
 
-
+/**
+ * **Note:** the below arguments need to be passed in an object. @see _IbuildEleventyArgs
+ * 
+ * @param eleventyVersion semantic version to look for (for example: "3", "3.1.2")
+ * @param scenarioDir path towards directory that holds all test scenarios
+ * @param scenarioName name of the test scenario to run
+ * @param projectRoot project root directory
+ * @param globalInputDir input to be used if scenarios do not provide their own
+ * 
+ * @returns promise for the resulting @see ScenarioOutput
+ */
 export async function buildEleventy({
     eleventyVersion,
-    scenarioDir,
-    scenarioName,
     projectRoot=cwd(),
-    globalInputDir
-}) : Promise<ScenarioOutput> {
+    globalInputDir,
+    scenarioDir,
+    scenarioName
+}: _IbuildEleventyArgs) : Promise<ScenarioOutput> {
     debug("Running buildEleventy", "scenarioDir: " + scenarioDir, "Eleventy version: " + eleventyVersion)
     return new Promise(async (resolve, reject)=> {
         debug("Finding package for Eleventy " + eleventyVersion);
-        const eleventyDir = await ensureEleventyExists(projectRoot, eleventyVersion);
+        const eleventyDir = await _ensureEleventyExists(eleventyVersion, projectRoot);
         debug("Found pacakge for Eleventy " + eleventyVersion);
 
         const bin = JSON.parse(
@@ -106,7 +151,7 @@ export async function buildEleventy({
         if (existsSync(scenarioInputDir)) {
             debug("Using scenario input")
             inputDir = scenarioInputDir;
-        } else if (existsSync(globalInputDir)) {
+        } else if (globalInputDir && existsSync(globalInputDir)) {
             debug("Using global input dir")
             inputDir = globalInputDir;
         }
