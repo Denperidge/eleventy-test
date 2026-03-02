@@ -1,5 +1,6 @@
 /**
- * Functions for internal Eleventy handling
+ * Functions for internal Eleventy handling & async exists
+ * - Checking if a file exists asynchronously @see _exists
  * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions 
  * - Installing Eleventy versions @see _installEleventyIfPkgManagerFound
  * - The combination of the two funcs above @see _ensureEleventyExists
@@ -19,7 +20,14 @@ interface ErrorWithCode extends Error {
     code?: string;
 }
 
-export async function _exists(filepath: string) {
+/**
+ * Asynchronously check if passed filepath exists
+ * 
+ * @param filepath filepath to check
+ * @returns true if file exists, false if it doesn't
+ * @throws any non-ENOENT errors from fsPromises.stat
+ */
+export async function _exists(filepath: string) : Promise<Boolean> {
     return new Promise((resolve, reject) => {
         stat(filepath)
             .then(stats => {
