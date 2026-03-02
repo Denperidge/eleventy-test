@@ -1,9 +1,9 @@
 /**
  * Functions for internal Eleventy handling
  * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions 
- * - Detecting needed eleventy versions for scenarios @see _dirnameToEleventyVersion
  * - Installing Eleventy versions @see _installEleventyIfPkgManagerFound
  * - The combination of the two funcs above @see _ensureEleventyExists
+ * - Detecting needed eleventy versions for scenarios @see _dirnameToEleventyVersion
  * - Running Eleventy Build @see buildEleventy
  */
 import { execSync, fork } from "child_process";
@@ -190,7 +190,7 @@ export interface _IbuildEleventyArgs {
 }
 
 /**
- * **Note:** the below arguments need to be passed in an object. @see _IbuildEleventyArgs
+ * **Note:** the arguments below need to be passed in an object. @see _IbuildEleventyArgs
  * 
  * @param scenarioDir path towards directory that holds all test scenarios
  * @param scenarioName name of the test scenario to run

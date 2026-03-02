@@ -28,7 +28,7 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
 }
 
 /**
- * **Note:** the below arguments need to be passed in an object. @see IbuildScenariosArgs
+ * **Note:** the arguments below need to be passed in an object. @see IbuildScenariosArgs
  * @param projectRoot project root directory
  * @default process.cwd()
  * @param returnArray if set to true, return array
