@@ -6,9 +6,6 @@
 import { join } from "path";
 import { readdir, readFile, lstat } from "fs/promises";
 
-// TODO: Due to constructors not being allowed to be async,
-// some synchronous code still exists in this file. Would like to get rid of that
-
 /**
  * 
  * @param dir directory to search in
@@ -39,7 +36,7 @@ export async function _recursiveFindFiles(dir: string, files: string[] = []): Pr
 /**
  * @class easy listing & reading of scenario outputs/eleventy-test-out files
  */
-export default class ScenarioOutput {
+export class ScenarioOutput {
     /** path to this scenario's eleventy-test-out */
     eleventyOutputDir: string;
     /** title of this scenario */

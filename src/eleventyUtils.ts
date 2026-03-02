@@ -13,8 +13,8 @@ import { join } from "path";
 import { cwd } from "process";
 import { get } from "https";
 
-import debug from "./debug";
-import ScenarioOutput from "./ScenarioOutput";
+import { debug } from "./debug";
+import { ScenarioOutput } from "./ScenarioOutput";
 
 /**
  * 
@@ -69,7 +69,7 @@ let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest e
  * @param scenarioDirname directory name from the scenario
  * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
  */
-async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
+export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
     // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
     let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
 
@@ -131,7 +131,7 @@ async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<stri
  * @param command command to prefix to install eleventy (for example: "yarn add", "npm install")
  * @returns promise for false/true, depending on whether eleventy install was succesful
  */
-async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string=cwd(), filename:string, command: string): Promise<boolean> {
+export async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string=cwd(), filename:string, command: string): Promise<boolean> {
     debug(`Attempting to find a package manager to install Eleventy ${eleventyVersion} with`)
     return new Promise(async (resolve, reject) => {
         if (existsSync(join(projectRoot, filename))) {
@@ -182,7 +182,7 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
     })
 }
 
-export interface _IbuildEleventyArgs {
+interface IbuildEleventyArgs {
     projectRoot?: string,
     globalInputDir?: string,
     scenarioDir: string,
@@ -190,7 +190,7 @@ export interface _IbuildEleventyArgs {
 }
 
 /**
- * **Note:** the arguments below need to be passed in an object. @see _IbuildEleventyArgs
+ * **Note:** the arguments below need to be passed in an object. @see IbuildEleventyArgs
  * 
  * @param scenarioDir path towards directory that holds all test scenarios
  * @param scenarioName name of the test scenario to run
@@ -205,7 +205,7 @@ export async function buildEleventy({
     globalInputDir,
     scenarioDir,
     scenarioName
-}: _IbuildEleventyArgs) : Promise<ScenarioOutput> {
+}: IbuildEleventyArgs) : Promise<ScenarioOutput> {
     debug("Parsing Eleventy version of scenario " + scenarioDir);
     let eleventyVersion = await _dirnameToEleventyVersion(scenarioName)
 

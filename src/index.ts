@@ -7,11 +7,12 @@ import { join, isAbsolute } from "path";
 import { cwd } from "process";
 import { readdir } from "fs/promises";
 
-import ScenarioOutput from "./ScenarioOutput";
+import { ScenarioOutput } from "./ScenarioOutput";
 import { buildEleventy, _determineInstalledEleventyVersions } from "./eleventyUtils";
-import debug, { setDebug } from "./debug";
+import { debug, _setDebug } from "./debug";
 
 export * from "./eleventyUtils";
+export * from "./ScenarioOutput";
 
 interface IbuildScenariosArgs {
     projectRoot?: string,
@@ -42,7 +43,7 @@ interface IbuildScenariosDictArgs extends IbuildScenariosArgs {
 export async function buildScenarios(opts: IbuildScenariosArrayArgs): Promise<ScenarioOutput[]>;
 export async function buildScenarios(opts: IbuildScenariosDictArgs): Promise<{[key:string]: ScenarioOutput}>;
 export async function buildScenarios({projectRoot=cwd(), returnArray=true, scenariosDir="tests/scenarios/", globalInputDir="tests/input", enableDebug=false}) {
-    setDebug(enableDebug);
+    _setDebug(enableDebug);
     debug("If you can see this, debugging has been enabled. Starting buildScenarios")
 
     return new Promise(async (resolve, reject) => {
