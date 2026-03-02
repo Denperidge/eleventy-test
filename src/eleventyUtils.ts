@@ -97,16 +97,22 @@ let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest e
  * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
  */
 export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
-    // Parse {eleventyVersion}--{label}/ vs {eleventyVersion}/ 
-    let eleventyVersion = scenarioDirname.includes("--") ? scenarioDirname.split("--")[0] : scenarioDirname;
+    // Parse {eleventyVersion}/ vs {label}@{eleventyVersion}/
+    /*
+    const dirnameVersion = scenarioDirname.match(/[\d.]+/);
+    if (!dirnameVersion) {
+        throw new Error("Could not find eleventy version in " + scenarioDirname);
+    }
+    let eleventyVersion = dirnameVersion[0]
+    */
+   let eleventyVersion = scenarioDirname.includes("@") ? scenarioDirname.substring(scenarioDirname.lastIndexOf("@") + 1) : scenarioDirname;
 
     debug(`eleventyVersion from dirname: ${eleventyVersion}`);
 
     if (eleventyVersion.length < 5) {
         debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
-        const scenarioMajorVersion = scenarioDirname[0];
+        const scenarioMajorVersion = eleventyVersion[0];
         if (versions == undefined) {
-
             debug("Pulling Eleventy tags...")
             versions = await new Promise((resolve, reject)=> {
                 get({
