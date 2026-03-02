@@ -7,7 +7,6 @@
  * - Running Eleventy Build @see buildEleventy
  */
 import { execSync, fork } from "child_process";
-import { existsSync } from "fs";
 import { readFile, rm, readdir, stat } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
@@ -48,7 +47,7 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
 
     debug("Determining installed Eleventy versions in " + eleventyPkgsDir)
 
-    if (existsSync(eleventyPkgsDir)) {
+    if (await _exists(eleventyPkgsDir)) {
         let eleventyPkgs = await readdir(eleventyPkgsDir);
         debug(`Found the following installed packages from @11ty: ${eleventyPkgs}`);
         const eleventyRegex = new RegExp(/eleventy(\d|$)/m)
@@ -154,7 +153,7 @@ export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promi
 export async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projectRoot: string=cwd(), filename:string, command: string): Promise<boolean> {
     debug(`Attempting to find a package manager to install Eleventy ${eleventyVersion} with`)
     return new Promise(async (resolve, reject) => {
-        if (existsSync(join(projectRoot, filename))) {
+        if (await _exists(join(projectRoot, filename))) {
             try {
                 debug("Running Eleventy " + eleventyVersion)
                 execSync(`${command} @11ty/eleventy${eleventyVersion}@npm:@11ty/eleventy@${eleventyVersion}`, {cwd:projectRoot});
@@ -246,10 +245,10 @@ export async function buildEleventy({
         const scenarioInputDir = join(scenarioDir, "input");
         let inputDir: string|undefined;
         debug(`Checking whether to use scenario (${scenarioInputDir}) or global input (${globalInputDir})...`)
-        if (existsSync(scenarioInputDir)) {
+        if (await _exists(scenarioInputDir)) {
             debug("Using scenario input")
             inputDir = scenarioInputDir;
-        } else if (globalInputDir && existsSync(globalInputDir)) {
+        } else if (globalInputDir && await _exists(globalInputDir)) {
             debug("Using global input dir")
             inputDir = globalInputDir;
         }
