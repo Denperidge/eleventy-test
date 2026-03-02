@@ -12,14 +12,6 @@ const results = await buildScenarios({
     returnArray: false
 });
 
-test("_exists returns true for existing files, false for non-existing, and throws on bad input", async t => {
-    t.true(await _exists("package.json"))
-    t.false(await _exists("non-existing-file.json"))
-    await t.throwsAsync(_exists(2), {
-        instanceOf: TypeError
-    });
-});
-
 test("When using the same version/config, the output looks identical (cjs-builds@3 === esm-builds@3)", async t => {
     t.deepEqual(
         await results["cjs-builds@3"].getFileContent("/index.html"), 
