@@ -20,16 +20,16 @@ test("_exists returns true for existing files, false for non-existing, and throw
     });
 });
 
-test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", async t => {
+test("When using the same version/config, the output looks identical (cjs-builds@3 === esm-builds@3)", async t => {
     t.deepEqual(
-        await results["3--cjs-builds"].getFileContent("/index.html"), 
-        await results["3.1.2--esm-builds"].getFileContent("/index.html")
+        await results["cjs-builds@3"].getFileContent("/index.html"), 
+        await results["esm-builds@3.1.2"].getFileContent("/index.html")
     );
 });
 
-test("Scenario-specific inputs are used where defined (2--own-input uses its own input)", async t=> {
-    const v2regularOutput = results[("2--builds")];
-    const v2OwnInputOutput = results[("2--own-input")];
+test("Scenario-specific inputs are used where defined (own-input@2 uses its own input)", async t=> {
+    const v2regularOutput = results[("builds@2")];
+    const v2OwnInputOutput = results[("own-input@2")];
 
     const ownInputIndexContent = await v2OwnInputOutput.getFileContent("/index.html");
     const ownInputSubdirContent = await v2OwnInputOutput.getFileContent("/subdir/index.html");
