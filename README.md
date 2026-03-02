@@ -3,7 +3,7 @@
  
 - Build using **multiple Eleventy versions & configurations** for your tests (called *scenarios*) seperately
 - Returns the **file contents per scenario** output for easy access during testing, with **caching** for repeated usage.
-- Compatible with **any test framework or method**: [configure your directory and use one function]((#using-the-plugin)), that's it!
+- Compatible with **any test framework or method**: [configure your directory and use one function](#using-the-plugin), that's it!
 - **Automatic installation** of either the **latest/specific or specific Eleventy versions** (*unless* they are found *locally*).
 - Aside from the Eleventy versions used to test, this package itself has **zero dependencies** when installing.
 
