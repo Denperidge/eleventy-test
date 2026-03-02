@@ -1,7 +1,7 @@
 import test from "ava";
 import { JSDOM } from "jsdom";
 import { cwd } from "process";
-import { buildScenarios } from "../dist/index.js";
+import { buildScenarios, _exists } from "../dist/index.js";
 
 function getDom(input) {
     return new JSDOM(input).window.document;
@@ -10,6 +10,14 @@ function getDom(input) {
 const results = await buildScenarios({
     projectRoot: cwd(),
     returnArray: false
+});
+
+test("_exists returns true for existing files, false for non-existing, and throws on bad input", async t => {
+    t.true(await _exists("package.json"))
+    t.false(await _exists("non-existing-file.json"))
+    await t.throwsAsync(_exists(2), {
+        instanceOf: TypeError
+    });
 });
 
 test("When using the same version/config, the output looks identical (3--cjs-builds === 3--esm-builds)", async t => {

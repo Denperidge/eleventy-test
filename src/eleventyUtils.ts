@@ -8,13 +8,33 @@
  */
 import { execSync, fork } from "child_process";
 import { existsSync } from "fs";
-import { readFile, rm, readdir } from "fs/promises";
+import { readFile, rm, readdir, stat } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
 import { get } from "https";
 
 import { debug } from "./debug";
 import { ScenarioOutput } from "./ScenarioOutput";
+
+interface ErrorWithCode extends Error {
+    code?: string;
+}
+
+export async function _exists(filepath: string) {
+    return new Promise((resolve, reject) => {
+        stat(filepath)
+            .then(stats => {
+                resolve(true)
+            })
+            .catch((err: ErrorWithCode) => {
+                if (err.code && err.code == "ENOENT") {
+                    resolve(false);
+                } else {
+                    reject(err);
+                }
+            })
+    });
+}
 
 /**
  * 
