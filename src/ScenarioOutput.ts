@@ -44,11 +44,11 @@ export default class ScenarioOutput {
     eleventyOutputDir: string;
     /** title of this scenario */
     title: string;
-    private _files: Set<string>;
+    private _filepaths: Set<string>;
     private cache: { [key: string]: string };
 
     constructor(pEleventyOutputDir: string, pTitle: string) {
-        this._files = new Set();
+        this._filepaths = new Set();
         this.cache = {};
         this.title = pTitle;
         this.eleventyOutputDir = pEleventyOutputDir;
@@ -62,18 +62,16 @@ export default class ScenarioOutput {
         const instance = new ScenarioOutput(pEleventyOutputDir, pTitle);
         const allFiles = await _recursiveFindFiles(instance.eleventyOutputDir);
         for (const filepath of allFiles) {
-            instance._files.add(filepath.replace(instance.eleventyOutputDir, ""));
+            instance._filepaths.add(filepath.replace(instance.eleventyOutputDir, ""));
         }
         return instance;
     }
 
     /**
-     * **Note:** unless you want filenames, you probably want getFileContent instead. @see getFileContent
-     *
-    * @returns object with the following layout: {"relative/filename.html": function() => "file contents"}
+    * @returns set of relative paths to output files
      */
-    get files(): Record<string, null> {
-        return Array.from(this._files).reduce((acc, f) => ({ ...acc, [f]: null }), {} as Record<string, null>);
+    get filepaths(): Set<string> {
+        return this._filepaths;
     }
 
     /**
@@ -84,8 +82,8 @@ export default class ScenarioOutput {
      * @returns promise for text contents
      */
     async getFileContent(filepath: string): Promise<string> {
-        if (!this._files.has(filepath)) {
-            throw new Error(`Can't find "${filepath}" in files. Available files: ${Array.from(this._files).join(", ")}`);
+        if (!this._filepaths.has(filepath)) {
+            throw new Error(`Can't find "${filepath}" in files. Available files: ${Array.from(this._filepaths).join(", ")}`);
         }
         if (!(filepath in this.cache)) {
             this.cache[filepath] = await readFile(join(this.eleventyOutputDir, filepath), { encoding: "utf-8" });

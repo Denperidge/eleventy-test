@@ -94,17 +94,16 @@ test("The scenario-specific configuration files are reflected in scenario output
     }
 });
 
-test("Input subdirectories are rendered & returned in every scenarui", async t => {
+test("Input subdirectories are rendered & returned in every scenario", async t => {
     for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
-        const outputFilenames = Object.keys(scenarioOutput.files);
         const scenarioIndex = await scenarioOutput.getFileContent("/index.html");
         const scenarioSubdirIndex = await scenarioOutput.getFileContent("/subdir/index.html");
         
-        t.true(outputFilenames.includes("/index.html"));
+        t.true(scenarioOutput.filepaths.has("/index.html"));
         t.truthy(scenarioIndex);
         t.not("", scenarioIndex);
 
-        t.true(outputFilenames.includes("/subdir/index.html"))
+        t.true(scenarioOutput.filepaths.has("/subdir/index.html"))
         t.truthy(scenarioSubdirIndex);
         t.not("", scenarioSubdirIndex);
     }
