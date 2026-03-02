@@ -27,7 +27,7 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
     const versions: {[key:string]: string} = {};
 
     debug("Determining installed Eleventy versions in " + eleventyPkgsDir)
-    
+
     if (existsSync(eleventyPkgsDir)) {
         let eleventyPkgs = await readdir(eleventyPkgsDir);
         debug(`Found the following installed packages from @11ty: ${eleventyPkgs}`);
@@ -41,7 +41,7 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
             const eleventyPkgDir = join(projectRoot, "node_modules/@11ty/", eleventyPkg)
             const version = JSON.parse(
                 await readFile(
-                    join(eleventyPkgDir, "package.json"), 
+                    join(eleventyPkgDir, "package.json"),
                     {encoding: "utf-8"}
                 )).version;
             versions[version] = eleventyPkgDir;
@@ -79,11 +79,11 @@ async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<stri
         debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
         const scenarioMajorVersion = scenarioDirname[0];
         if (versions == undefined) {
-            
+
             debug("Pulling Eleventy tags...")
             versions = await new Promise((resolve, reject)=> {
                 get({
-                    
+
                     hostname: "api.github.com",
                     path: "/repos/11ty/eleventy/tags",
                     headers: {
@@ -158,7 +158,7 @@ async function _installEleventyIfPkgManagerFound(eleventyVersion: string, projec
  * @default process.cwd()
  * @returns promise for the install directory of specified eleventy version
  */
-export async function _ensureEleventyExists(eleventyVersion: string, projectRoot: string=cwd()) : Promise<string> {
+export async function _ensureEleventyExists(eleventyVersion: string, projectRoot: string = cwd()): Promise<string> {
     debug(`Ensuring Eleventy ${eleventyVersion} exists`)
     return new Promise(async (resolve, reject) => {
         const versions = await _determineInstalledEleventyVersions(projectRoot)
@@ -222,7 +222,7 @@ export async function buildEleventy({
             )).bin.eleventy;
         const pathToBin = join(eleventyDir, bin);
         debug(`Found entrypoint for Eleventy ${eleventyVersion} at ${pathToBin}`)
-        
+
         const scenarioInputDir = join(scenarioDir, "input");
         let inputDir: string|undefined;
         debug(`Checking whether to use scenario (${scenarioInputDir}) or global input (${globalInputDir})...`)
@@ -246,16 +246,16 @@ export async function buildEleventy({
         try {
             debug("Creating Eleventy process...")
             const out = fork(
-                pathToBin, 
-                ["--input", inputDir, "--output", outputDir ], 
-            {cwd: scenarioDir})
+                pathToBin,
+                ["--input", inputDir, "--output", outputDir ],
+                {cwd: scenarioDir})
             out.on("message", (msg) => {
                 console.log(msg)
             })
 
             out.on("close", async (code) => {
                 debug(`Eleventy ${eleventyVersion}/${scenarioName} finished`)
-                resolve(new ScenarioOutput(outputDir, scenarioName));
+                resolve(await ScenarioOutput.create(outputDir, scenarioName));
             });
         } catch (e) {
             throw e;

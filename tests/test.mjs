@@ -37,7 +37,9 @@ test("Scenario-specific inputs are used where defined (2--own-input uses its own
 })
 
 test("The specified Eleventy versions are used (found correct values for [meta name='generator' content='{{eleventy.generator}}']) ", async t => {
-    Object.entries(results).forEach(async ([scenarioTitle, scenarioOutput])=> {
+    // forEach doesn't await async callbacks, so assertions never ran before AVA finished the test.
+    // This is why I had to change forEach to for
+    for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
         let expectedGenerator;
         switch(scenarioTitle[0]) {
             case "1":
@@ -65,11 +67,11 @@ test("The specified Eleventy versions are used (found correct values for [meta n
         const dom = getDom(await scenarioOutput.getFileContent("/index.html"))
         const generator = dom.querySelector("meta[name='generator']").content;
         t.is(expectedGenerator, generator)
-    })
+    }
 })
 
 test("The scenario-specific configuration files are reflected in scenario output (Correct title has been rendered from corresponding scenario .eleventy.js)", async t => {
-    Object.entries(results).forEach(async([scenarioTitle, scenarioOutput])=> {
+    for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
         let expecedTitle;
         switch(scenarioTitle[0]) {
             case "1":
@@ -89,11 +91,11 @@ test("The scenario-specific configuration files are reflected in scenario output
         const dom = getDom(await scenarioOutput.getFileContent("/index.html"))
         const title = dom.querySelector("title").text;
         t.is(expecedTitle, title)
-    })
+    }
 });
 
 test("Input subdirectories are rendered & returned in every scenarui", async t => {
-    Object.entries(results).forEach(async ([scenarioTitle, scenarioOutput])=> {
+    for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
         const outputFilenames = Object.keys(scenarioOutput.files);
         const scenarioIndex = await scenarioOutput.getFileContent("/index.html");
         const scenarioSubdirIndex = await scenarioOutput.getFileContent("/subdir/index.html");
@@ -105,5 +107,5 @@ test("Input subdirectories are rendered & returned in every scenarui", async t =
         t.true(outputFilenames.includes("/subdir/index.html"))
         t.truthy(scenarioSubdirIndex);
         t.not("", scenarioSubdirIndex);
-    })
+    }
 })
