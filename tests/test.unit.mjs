@@ -1,5 +1,5 @@
 import test from "ava";
-import { _exists, _cache, _cacheWrite } from "../dist/index.js";
+import { _exists, _cache, _cacheWrite, _getReleasedEleventyVersions, _requestReleasedEleventyVersions } from "../dist/index.js";
 import { readFile, rm, writeFile } from "fs/promises";
 
 const CACHE_DIR = "tests/eleventy-test-out/";
@@ -100,4 +100,17 @@ test("_cache does not return cache if it is outdated", async t => {
     t.not(cacheReturn, wrongData);  // Measure twice cut once?
     t.is(cacheWritten, expectedData);
     t.not(cacheWritten, wrongData);
+});
+
+test("_requestReleasedEleventyVersions works as intended", async t => {
+    const page1 = await _requestReleasedEleventyVersions(1);
+    const page2 = await _requestReleasedEleventyVersions(2);
+    t.true(page1.length == 100, `Wrong page length for page 1: ${page1.length} != 100`);
+    t.true(page2.length == 100, `Wrong page length for page 2: ${page2.length} != 100`);
+    t.notDeepEqual(page1, page2);
+});
+
+test("_getReleasedEleventyVersions works as intended", async t => {
+    const data = await _getReleasedEleventyVersions();
+    t.true(data.length >= 218, `Not enough Eleventy Versions have been found. Found ${data.length}, expected <= 218`)
 });
