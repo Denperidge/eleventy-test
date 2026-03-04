@@ -13,6 +13,7 @@ import { debug, _setDebug } from "./debug";
 
 export * from "./eleventyUtils";
 export * from "./ScenarioOutput";
+export * from "./githubApi";
 
 interface IbuildScenariosArgs {
     projectRoot?: string,
