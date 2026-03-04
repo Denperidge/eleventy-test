@@ -2,13 +2,19 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { _exists } from "./eleventyUtils";
 import { dirname } from "path";
 
-export const DEFAULT_CACHE_PATH = "tests/eleventy-test-out/cache.json";
-
 interface ICache {
     data: Object|Array<any>;
     datetime: number;
 }
 
+export const DEFAULT_CACHE_PATH = "tests/eleventy-test-out/cache.json";
+/**
+ * 
+ * @param dataToSave variable you want to save in cache
+ * @param filepath path to json file the cache should be written to
+ * @default tests/eleventy-test-out/cache.json
+ * @returns void promise
+ */
 export async function _cacheWrite(dataToSave: any, filepath: string=DEFAULT_CACHE_PATH) {
     const data: ICache = {
         "datetime": Date.now()-100,  // -100 to fix race condition for tests
@@ -24,17 +30,18 @@ export async function _cacheWrite(dataToSave: any, filepath: string=DEFAULT_CACH
 }
 
 /**
- * This function works like the following:
- * - Checking for an existing cache
+ * This function works like as follows:
+ * - Check for an existing cache
  * - If the cache exists, check if its outdated (not from today)
- * - If it's not outdated, return cache
+ * - If it's not outdated, return cache data
  * - If the cache doesn't exist, run passed function async
- * - Store passed function data in cache & return
+ * - Store returned passed function data in cache & return data
  * 
+ * @param fetchData async function to run to get new cache data
  * @param filepath path to cache json file
- * @returns 
+ * @returns promise for the cache data
  */
-export async function _cache(fetchData:Function, filepath: string=DEFAULT_CACHE_PATH): Promise<any> {
+export async function _cache(fetchData: Function, filepath: string=DEFAULT_CACHE_PATH): Promise<any> {
     return new Promise(async (resolve, reject) => {
         // If cache exists
         if (await _exists(filepath)) {
