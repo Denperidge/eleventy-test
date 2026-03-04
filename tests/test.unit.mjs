@@ -3,7 +3,10 @@ import { _exists, _cache, _cacheWrite } from "../dist/index.js";
 import { readFile, rm, writeFile } from "fs/promises";
 
 const CACHE_DIR = "tests/eleventy-test-out/";
-const TEST_JSON_TARGET = CACHE_DIR + "test.json";
+
+function getJsonTarget(t, dir=CACHE_DIR) {
+    return dir + `${t.title.replace(/[^a-zA-Z]/g, "")}.json`;
+}
 
 async function ensureNotExisting(t, existsPath, removePath=undefined) {
     if (removePath == undefined) {
@@ -23,24 +26,24 @@ test("_exists returns true for existing files, false for non-existing, and throw
     });
 });
 
-test.serial("_cacheWrite writes an object or array to a json file correctly, creating a directory & file when needed", async t => {
+test("_cacheWrite writes an object or array to a json file correctly, creating a directory & file when needed", async t => {
+    const seperateDir = CACHE_DIR + "subdir/";
+    const testJsonTarget = getJsonTarget(t, seperateDir);
     const testData = [
         ["piece of text!", 5],
         {"key": "value"},
     ];
 
-    // TODO: proper async test
-
     for (let i=0; i < 2; i++) {
         // Make sure cache doesn't already exist
-        await ensureNotExisting(t, TEST_JSON_TARGET, CACHE_DIR);
+        await ensureNotExisting(t, testJsonTarget, seperateDir);
 
         // The cache folder & file exist after writing
-        await _cacheWrite(testData[i], TEST_JSON_TARGET);
-        t.true(await _exists(TEST_JSON_TARGET))
+        await _cacheWrite(testData[i], testJsonTarget);
+        t.true(await _exists(testJsonTarget))
 
         // Test written data
-        const cache = JSON.parse(await readFile(TEST_JSON_TARGET, {encoding: "utf-8"}));
+        const cache = JSON.parse(await readFile(testJsonTarget, {encoding: "utf-8"}));
         const cacheDatetime = new Date(cache.datetime);
         // Cache datetime year sanity check
         t.true(cacheDatetime.getFullYear() >= 2026, `The cached datetime (${cacheDatetime}) is impossible (date before the creation of this cache function)`)
@@ -56,38 +59,40 @@ async function cacheExampledata() {
     return 20;
 }
 
-test.serial("_cache returns function output if it doesn't exist & writes to file", async t => {
-    await ensureNotExisting(t, TEST_JSON_TARGET);
+test("_cache returns function output if it doesn't exist & writes to file", async t => {
+    const testJsonTarget = getJsonTarget(t);
+    await ensureNotExisting(t, testJsonTarget);
 
     const expectedData = await cacheExampledata();
-    const cacheData = await _cache(cacheExampledata, TEST_JSON_TARGET);
+    const cacheData = await _cache(cacheExampledata, testJsonTarget);
 
     t.deepEqual(cacheData, expectedData);
-    const writtenCache = JSON.parse(await readFile(TEST_JSON_TARGET, {encoding: "utf-8"}));
+    const writtenCache = JSON.parse(await readFile(testJsonTarget, {encoding: "utf-8"}));
     t.deepEqual(writtenCache.data, expectedData);
 });
 
 
-test.serial("_cache does not return cache if it is outdated", async t => {
+test("_cache does not return cache if it is outdated", async t => {
+    const testJsonTarget = getJsonTarget(t);
     // Make sure cache doesn't exist
-    await ensureNotExisting(t, TEST_JSON_TARGET);
+    await ensureNotExisting(t, testJsonTarget);
 
     // Create new cache
     const wrongData = "Random string that shouldn't be read";
-    await _cacheWrite(wrongData, TEST_JSON_TARGET);
+    await _cacheWrite(wrongData, testJsonTarget);
     
     // Read the cache
-    const expiredCache = JSON.parse(await readFile(TEST_JSON_TARGET, {encoding: "utf-8"}));
+    const expiredCache = JSON.parse(await readFile(testJsonTarget, {encoding: "utf-8"}));
 
     // Set date to yesterday: ms-s-h-d
     expiredCache.datetime -= 1000*60*60*24;
 
     // Re-write the cache
-    await writeFile(TEST_JSON_TARGET, JSON.stringify(expiredCache), {encoding: "utf-8"});
+    await writeFile(testJsonTarget, JSON.stringify(expiredCache), {encoding: "utf-8"});
 
     // Re-read cache
-    const cacheReturn = await _cache(cacheExampledata, TEST_JSON_TARGET);
-    const cacheWritten = JSON.parse(await readFile(TEST_JSON_TARGET, {encoding: "utf-8"})).data;
+    const cacheReturn = await _cache(cacheExampledata, testJsonTarget);
+    const cacheWritten = JSON.parse(await readFile(testJsonTarget, {encoding: "utf-8"})).data;
 
     // Check if the read data is different from the original wrong data 
     const expectedData = await cacheExampledata();
