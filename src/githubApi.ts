@@ -1,6 +1,8 @@
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { _exists } from "./eleventyUtils";
 import { dirname } from "path";
+import { debug } from "./debug";
+import { get } from "https";
 
 interface ICache {
     data: Object|Array<any>;
@@ -58,4 +60,64 @@ export async function _cache(fetchData: Function, filepath: string=DEFAULT_CACHE
         await _cacheWrite(cacheData, filepath);
         resolve(cacheData);
     });
+}
+
+
+interface IgitHubApiTags {
+    name: string,
+    zipball_url: string,
+    tarball_url: string,
+    node_id: string,
+    commit: {
+        sha: string,
+        url: string
+    }
+}
+
+
+/**
+ * 
+ * @returns GitHub tag info. @see IgitHubApiTags
+ */
+export async function _requestReleasedEleventyVersions(page=1) : Promise<Array<IgitHubApiTags>> {
+    debug("Pulling Eleventy tags...")
+    return new Promise((resolve, reject) => {
+        get({
+            hostname: "api.github.com",
+            path: `/repos/11ty/eleventy/tags?per_page=100&page=${page}`,
+            headers: {
+                "User-Agent": "Mozilla/5.0"
+            }
+        }, (res)=> {
+            let data: Buffer[] = [];
+            res.on("data", chunk => {
+                data.push(chunk);
+            }).on("end", async () => {
+                debug("Parsing Eleventy tags API response...")
+                let tags: Array<IgitHubApiTags> = JSON.parse(
+                    Buffer.concat(data).toString("utf-8")
+                )
+                resolve(tags);
+            }).on("error", (err) => {
+                throw err;
+            })
+        });
+    });
+}
+
+export async function _getReleasedEleventyVersions() : Promise<Array<IgitHubApiTags>> {
+    return new Promise((resolve, reject) => {
+        let page = 1;
+        let out: Array<IgitHubApiTags> = [];
+        const timer = setInterval(async () => {
+            const req = await _requestReleasedEleventyVersions(page);
+            page++;
+            out = out.concat(req);
+            if (req.length < 100) {
+                clearInterval(timer);
+                resolve(out);
+            }
+        }, 1500)
+
+    })
 }
