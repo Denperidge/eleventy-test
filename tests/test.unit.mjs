@@ -134,11 +134,12 @@ test("_majorToSemanticEleventyVersion works as expected", async t => {
     );
     t.throws(() => {_majorToSemanticEleventyVersion("0", versions)}, {
         instanceOf: Error,
-        message: "Couldn't determine Eleventy version from 0"
+        message: "Couldn't determine Eleventy version from 0\nversions: " +
+            versions.map(version => {return version.name}).join(",")
     });
     t.throws(() => { _majorToSemanticEleventyVersion(3, [])}, {
         instanceOf: Error,
-        message: "Couldn't determine Eleventy version from 3"
+        message: "Couldn't determine Eleventy version from 3\nversions: "
     });
 });
 
@@ -147,9 +148,9 @@ test("_dirnameToEleventyVersion works as expected", async t => {
     const versions = await _cache(_getReleasedEleventyVersions);
 
     t.is(
-        _dirnameToEleventyVersion("3@custom-label", versions),
+        _dirnameToEleventyVersion("custom-label@3", versions),
         LATEST_ELEVENTY_3_VERSION,
-        "_dirnameToEleventyVersion could not parse 3@custom-label"
+        "_dirnameToEleventyVersion could not parse custom-label@3"
     );
     t.is(
         _dirnameToEleventyVersion("3", versions),
@@ -157,7 +158,7 @@ test("_dirnameToEleventyVersion works as expected", async t => {
         "_dirnameToEleventyVersion could not parse 3"
     );
     t.is(
-        _dirnameToEleventyVersion("2.0.0-canary.8@label", versions),
+        _dirnameToEleventyVersion("label@2.0.0-canary.8", versions),
         "2.0.0-canary.8",
         "_dirnameToEleventyVersion could not parse 2.0.0-canary.8@label"
     );
