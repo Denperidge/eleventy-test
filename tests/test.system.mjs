@@ -1,7 +1,7 @@
 import test from "ava";
 import { JSDOM } from "jsdom";
 import { cwd } from "process";
-import { buildScenarios, _exists } from "../dist/index.js";
+import { buildScenarios, _exists, _dirnameToEleventyVersion, _cache, _getReleasedEleventyVersions } from "../dist/index.js";
 
 function getDom(input) {
     return new JSDOM(input).window.document;
@@ -37,11 +37,15 @@ test("Scenario-specific inputs are used where defined (own-input@2 uses its own 
 })
 
 test("The specified Eleventy versions are used (found correct values for [meta name='generator' content='{{eleventy.generator}}']) ", async t => {
+    const versions = await _cache(_getReleasedEleventyVersions)
     // forEach doesn't await async callbacks, so assertions never ran before AVA finished the test.
     // This is why I had to change forEach to for
     for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
         let expectedGenerator;
-        switch(scenarioTitle[0]) {
+        
+        const eleventyVersion = _dirnameToEleventyVersion(scenarioTitle, versions);
+
+        switch(eleventyVersion[0]) {
             case "1":
                 expectedGenerator = "Eleventy v1.0.2";
                 break;
@@ -60,7 +64,7 @@ test("The specified Eleventy versions are used (found correct values for [meta n
                 }
                 break;
             default:
-                throw Error("Could not determine Eleventy version")
+                throw Error("Could not determine Eleventy version from " + scenarioTitle)
 
         }
 
@@ -70,27 +74,19 @@ test("The specified Eleventy versions are used (found correct values for [meta n
     }
 })
 
+const EXPECTED_TITLE = {
+    "1.0.2": "v1.0.2",
+    "build@2.0.0-canary.8": "v2.0.0-canary.8",
+    "builds@2": "v2.X.X",
+    "cjs-builds@3": "v3.X.X",
+    "esm-builds@3.1.2": "v3.X.X",
+    "own-input@2": "v2!"
+};
 test("The scenario-specific configuration files are reflected in scenario output (Correct title has been rendered from corresponding scenario .eleventy.js)", async t => {
     for (const [scenarioTitle, scenarioOutput] of Object.entries(results)) {
-        let expecedTitle;
-        switch(scenarioTitle[0]) {
-            case "1":
-                expecedTitle = "v1!";
-                break;
-            case "2":
-                expecedTitle = "v2!";
-                break;
-            case "3":
-                expecedTitle = "v3!";
-                break;
-            default:
-                throw Error("Could not determine Eleventy version")
-
-        }
-
         const dom = getDom(await scenarioOutput.getFileContent("/index.html"))
         const title = dom.querySelector("title").text;
-        t.is(expecedTitle, title)
+        t.is(EXPECTED_TITLE[scenarioTitle], title)
     }
 });
 
