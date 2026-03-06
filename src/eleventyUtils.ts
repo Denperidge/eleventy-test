@@ -100,8 +100,7 @@ export function _majorToSemanticEleventyVersion(majorVersion: string, allVersion
         }
     }
     const versions = allVersions.map((version) => {return version.name})
-    throw new Error(`Couldn't determine Eleventy version from ${majorVersion}
-        versions: ${versions.join(",")}`);
+    throw new Error(`Couldn't determine Eleventy version from ${majorVersion}\nversions: ${versions.join(",")}`);
 }
 
 /**
