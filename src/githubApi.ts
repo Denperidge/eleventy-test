@@ -63,7 +63,7 @@ export async function _cache(fetchData: Function, filepath: string=DEFAULT_CACHE
 }
 
 
-interface IgitHubApiTags {
+export interface IgitHubApiTags {
     name: string,
     zipball_url: string,
     tarball_url: string,

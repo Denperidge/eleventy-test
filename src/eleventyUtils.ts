@@ -11,10 +11,10 @@ import { execSync, fork } from "child_process";
 import { readFile, rm, readdir, stat } from "fs/promises";
 import { join } from "path";
 import { cwd } from "process";
-import { get } from "https";
 
 import { debug } from "./debug";
 import { ScenarioOutput } from "./ScenarioOutput";
+import { _cache, _getReleasedEleventyVersions, IgitHubApiTags } from "./githubApi";
 
 interface ErrorWithCode extends Error {
     code?: string;
@@ -79,18 +79,6 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
 }
 
 
-interface IgitHubApiTags {
-    name: string,
-    zipball_url: string,
-    tarball_url: string,
-    node_id: string,
-    commit: {
-        sha: string,
-        url: string
-    }
-}
-let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest eleventy versions
-
 /**
  * 
  * @param scenarioDirname directory name from the scenario
@@ -98,47 +86,14 @@ let versions: Array<IgitHubApiTags>;  // Cache variable for determining latest e
  */
 export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
     // Parse {eleventyVersion}/ vs {label}@{eleventyVersion}/
-    /*
-    const dirnameVersion = scenarioDirname.match(/[\d.]+/);
-    if (!dirnameVersion) {
-        throw new Error("Could not find eleventy version in " + scenarioDirname);
-    }
-    let eleventyVersion = dirnameVersion[0]
-    */
-   let eleventyVersion = scenarioDirname.includes("@") ? scenarioDirname.substring(scenarioDirname.lastIndexOf("@") + 1) : scenarioDirname;
+    let eleventyVersion = scenarioDirname.includes("@") ? scenarioDirname.substring(scenarioDirname.lastIndexOf("@") + 1) : scenarioDirname;
 
+    const versions: Array<IgitHubApiTags> = await _cache(_getReleasedEleventyVersions);
     debug(`eleventyVersion from dirname: ${eleventyVersion}`);
 
     if (eleventyVersion.length < 5) {
         debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
         const scenarioMajorVersion = eleventyVersion[0];
-        if (versions == undefined) {
-            debug("Pulling Eleventy tags...")
-            versions = await new Promise((resolve, reject)=> {
-                get({
-
-                    hostname: "api.github.com",
-                    path: "/repos/11ty/eleventy/tags",
-                    headers: {
-                        "User-Agent": "Mozilla/5.0"
-                    }
-                }, (res)=> {
-                    let data: Buffer[] = [];
-                    res.on("data", chunk => {
-                        data.push(chunk);
-                    }).on("end", () => {
-                        debug("Parsing Eleventy tags API response...")
-                        resolve(
-                            JSON.parse(
-                                Buffer.concat(data).toString("utf-8")
-                            )
-                        )
-                    }).on("error", (err) => {
-                        throw err;
-                    })
-                });
-            });
-        }
         for (let i=0; i < versions.length; i++) {
             const version = versions[i];
             debug("Checking " + version);
