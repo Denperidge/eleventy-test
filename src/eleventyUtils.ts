@@ -78,6 +78,29 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
     return versions;
 }
 
+/**
+ * Return first/latest version using the major version
+ * 
+ * @param majorVersion major version to lookup (example: 2) 
+ * @param allVersions array including all Eleventy versions
+ * @returns latest semantic Eleventy version that is not an alpha/beta (example: 2.0.1)
+ * @throws {Error} if no major versions can be found
+ * @see _getReleasedEleventyVersions
+ * @see IgitHubApiTags 
+*/
+export function _majorToSemanticEleventyVersion(majorVersion: string, allVersions: Array<IgitHubApiTags>): string {
+    for (let i=0; i < allVersions.length; i++) {
+        const version = allVersions[i];
+        debug("Checking " + version);
+        // When auto-selecting, choose a non-alpha/canary build
+        if (!version.name.includes("-") && version.name[1] == majorVersion) {
+            const eleventyVersion = version.name.substring(1);
+            debug("Determined latest of relevant major version for: " + eleventyVersion)
+            return eleventyVersion;
+        }
+    }
+    throw new Error("Couldn't determine Eleventy version from " + majorVersion);
+}
 
 /**
  * 
@@ -87,23 +110,13 @@ export async function _determineInstalledEleventyVersions(projectRoot: string=cw
 export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
     // Parse {eleventyVersion}/ vs {label}@{eleventyVersion}/
     let eleventyVersion = scenarioDirname.includes("@") ? scenarioDirname.substring(scenarioDirname.lastIndexOf("@") + 1) : scenarioDirname;
+    debug(`eleventyVersion from dirname: ${eleventyVersion}`);
 
     const versions: Array<IgitHubApiTags> = await _cache(_getReleasedEleventyVersions);
-    debug(`eleventyVersion from dirname: ${eleventyVersion}`);
 
     if (eleventyVersion.length < 5) {
         debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
-        const scenarioMajorVersion = eleventyVersion[0];
-        for (let i=0; i < versions.length; i++) {
-            const version = versions[i];
-            debug("Checking " + version);
-            // When auto-selecting, choose a non-alpha/canary build
-            if (!version.name.includes("-") && version.name[1] == scenarioMajorVersion) {
-                eleventyVersion = version.name.substring(1);
-                debug("Determined latest of relevant major version for: " + eleventyVersion)
-                break;
-            }
-        }
+        eleventyVersion = _majorToSemanticEleventyVersion(eleventyVersion[0], versions);
     }
     return eleventyVersion;
 }

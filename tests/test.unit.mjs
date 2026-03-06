@@ -1,5 +1,5 @@
 import test from "ava";
-import { _exists, _cache, _cacheWrite, _getReleasedEleventyVersions, _requestReleasedEleventyVersions } from "../dist/index.js";
+import { _exists, _cache, _cacheWrite, _getReleasedEleventyVersions, _requestReleasedEleventyVersions, _majorToSemanticEleventyVersion } from "../dist/index.js";
 import { readFile, rm, writeFile } from "fs/promises";
 
 const CACHE_DIR = "tests/eleventy-test-out/";
@@ -113,4 +113,31 @@ test("_requestReleasedEleventyVersions works as intended", async t => {
 test("_getReleasedEleventyVersions works as intended", async t => {
     const data = await _getReleasedEleventyVersions();
     t.true(data.length >= 218, `Not enough Eleventy Versions have been found. Found ${data.length}, expected <= 218`)
+});
+
+const LATEST_ELEVENTY_3_VERSION = "3.1.2";
+const LATEST_ELEVENTY_2_VERSION = "2.0.1";
+const LATEST_ELEVENTY_1_VERSION = "1.0.2";
+test("_majorToSemanticEleventyVersion works as expected", async t => {
+    const versions = await _cache(_requestReleasedEleventyVersions);
+    t.is(
+        _majorToSemanticEleventyVersion("3", versions),
+        LATEST_ELEVENTY_3_VERSION
+    );
+    t.is(
+        _majorToSemanticEleventyVersion("2", versions),
+        LATEST_ELEVENTY_2_VERSION
+    );
+    t.is(
+        _majorToSemanticEleventyVersion("1", versions),
+        LATEST_ELEVENTY_1_VERSION
+    );
+    t.throws(() => {_majorToSemanticEleventyVersion("0", versions)}, {
+        instanceOf: Error,
+        message: "Couldn't determine Eleventy version from 0"
+    });
+    t.throws(() => { _majorToSemanticEleventyVersion(3, [])}, {
+        instanceOf: Error,
+        message: "Couldn't determine Eleventy version from 3"
+    });
 });
