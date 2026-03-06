@@ -1,7 +1,9 @@
 /**
  * Functions for internal Eleventy handling & async exists
  * - Checking if a file exists asynchronously @see _exists
- * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions 
+ * - Determining installed Eleventy versions @see _determineInstalledEleventyVersions
+ * - Turning a major version (3) into the latest eleventy version (3.1.2) @see _majorToSemanticEleventyVersion
+ * - Turning a scenario dirname into a full semantic 11ty version @see _dirnameToEleventyVersion
  * - Installing Eleventy versions @see _installEleventyIfPkgManagerFound
  * - The combination of the two funcs above @see _ensureEleventyExists
  * - Detecting needed eleventy versions for scenarios @see _dirnameToEleventyVersion

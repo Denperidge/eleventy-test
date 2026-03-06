@@ -1,3 +1,11 @@
+/**
+ * Functions for interacting with the GitHub API/11ty's repo
+ * - Write any variable to cache.json, with a variable of the request datetime @see _cacheWrite
+ * - Get the data from cache, if the cache isn't older than today.
+ *     Otherwise, cache & return the output of provided function @see _cache
+ * - Requesting a specific ?page= from 11ty's repo @see _requestReleasedEleventyVersions
+ * - Requesting all Eleventy version names from 11ty's repo @see _getReleasedEleventyVersions
+ */
 import { readFile, writeFile, mkdir } from "fs/promises";
 import { _exists } from "./eleventyUtils";
 import { dirname } from "path";
@@ -76,6 +84,7 @@ export interface IgitHubApiTags {
 
 
 /**
+ * Return data from GitHub API, from the passed ?page= parameter
  * 
  * @returns GitHub tag info. @see IgitHubApiTags
  */
