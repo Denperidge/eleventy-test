@@ -99,7 +99,9 @@ export function _majorToSemanticEleventyVersion(majorVersion: string, allVersion
             return eleventyVersion;
         }
     }
-    throw new Error("Couldn't determine Eleventy version from " + majorVersion);
+    const versions = allVersions.map((version) => {return version.name})
+    throw new Error(`Couldn't determine Eleventy version from ${majorVersion}
+        versions: ${versions.join(",")}`);
 }
 
 /**
@@ -112,7 +114,7 @@ export function _majorToSemanticEleventyVersion(majorVersion: string, allVersion
  */
 export function _dirnameToEleventyVersion(dirname: string, versions: Array<IgitHubApiTags>) : string {
     // Parse {eleventyVersion}/ vs {label}@{eleventyVersion}/
-    let eleventyVersion = dirname.includes("@") ? dirname.substring(0, dirname.lastIndexOf("@")) : dirname;
+    let eleventyVersion = dirname.includes("@") ? dirname.substring(dirname.lastIndexOf("@") + 1) : dirname;
     debug(`eleventyVersion from dirname: ${eleventyVersion}`);
 
     if (eleventyVersion.length < 5) {
@@ -208,7 +210,7 @@ export async function buildEleventy({
     scenarioDir,
     scenarioName
 }: IbuildEleventyArgs) : Promise<ScenarioOutput> {
-    const versions = await _cache(_getReleasedEleventyVersions);
+    const versions: Array<IgitHubApiTags> = await _cache(_getReleasedEleventyVersions);
     debug("Parsing Eleventy version of scenario " + scenarioDir);
     let eleventyVersion = _dirnameToEleventyVersion(scenarioName, versions)
 
