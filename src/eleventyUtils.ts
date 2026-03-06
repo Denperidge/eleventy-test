@@ -104,15 +104,16 @@ export function _majorToSemanticEleventyVersion(majorVersion: string, allVersion
 
 /**
  * 
- * @param scenarioDirname directory name from the scenario
+ * @param dirname directory name from the scenario
+ * @param versions array of Eleventy release tags
  * @returns promise for a string of the extracted eleventy version; even if only a major number is provided
+ * @see _getReleasedEleventyVersions
+ * @see IgitHubApiTags
  */
-export async function _dirnameToEleventyVersion(scenarioDirname: string) : Promise<string> {
+export function _dirnameToEleventyVersion(dirname: string, versions: Array<IgitHubApiTags>) : string {
     // Parse {eleventyVersion}/ vs {label}@{eleventyVersion}/
-    let eleventyVersion = scenarioDirname.includes("@") ? scenarioDirname.substring(scenarioDirname.lastIndexOf("@") + 1) : scenarioDirname;
+    let eleventyVersion = dirname.includes("@") ? dirname.substring(0, dirname.lastIndexOf("@")) : dirname;
     debug(`eleventyVersion from dirname: ${eleventyVersion}`);
-
-    const versions: Array<IgitHubApiTags> = await _cache(_getReleasedEleventyVersions);
 
     if (eleventyVersion.length < 5) {
         debug("eleventyVersion length is under 5, and as such not a full semantic version. Determining latest...")
@@ -207,8 +208,9 @@ export async function buildEleventy({
     scenarioDir,
     scenarioName
 }: IbuildEleventyArgs) : Promise<ScenarioOutput> {
+    const versions = await _cache(_getReleasedEleventyVersions);
     debug("Parsing Eleventy version of scenario " + scenarioDir);
-    let eleventyVersion = await _dirnameToEleventyVersion(scenarioName)
+    let eleventyVersion = _dirnameToEleventyVersion(scenarioName, versions)
 
     debug("Running buildEleventy", "scenarioDir: " + scenarioDir, "Eleventy version: " + eleventyVersion)
     return new Promise(async (resolve, reject)=> {

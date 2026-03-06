@@ -1,5 +1,5 @@
 import test from "ava";
-import { _exists, _cache, _cacheWrite, _getReleasedEleventyVersions, _requestReleasedEleventyVersions, _majorToSemanticEleventyVersion } from "../dist/index.js";
+import { _exists, _cache, _cacheWrite, _getReleasedEleventyVersions, _requestReleasedEleventyVersions, _majorToSemanticEleventyVersion, _dirnameToEleventyVersion } from "../dist/index.js";
 import { readFile, rm, writeFile } from "fs/promises";
 
 const CACHE_DIR = "tests/eleventy-test-out/";
@@ -140,4 +140,25 @@ test("_majorToSemanticEleventyVersion works as expected", async t => {
         instanceOf: Error,
         message: "Couldn't determine Eleventy version from 3"
     });
+});
+
+// This test might be considered integration maybe?
+test("_dirnameToEleventyVersion works as expected", async t => {
+    const versions = await _cache(_getReleasedEleventyVersions);
+
+    t.is(
+        _dirnameToEleventyVersion("3@custom-label", versions),
+        LATEST_ELEVENTY_3_VERSION,
+        "_dirnameToEleventyVersion could not parse 3@custom-label"
+    );
+    t.is(
+        _dirnameToEleventyVersion("3", versions),
+        LATEST_ELEVENTY_3_VERSION,
+        "_dirnameToEleventyVersion could not parse 3"
+    );
+    t.is(
+        _dirnameToEleventyVersion("2.0.0-canary.8@label", versions),
+        "2.0.0-canary.8",
+        "_dirnameToEleventyVersion could not parse 2.0.0-canary.8@label"
+    );
 });
