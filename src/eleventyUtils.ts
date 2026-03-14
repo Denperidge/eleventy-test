@@ -180,6 +180,10 @@ export async function _ensureEleventyExists(eleventyVersion: string, projectRoot
                 eleventyVersion, projectRoot, "yarn.lock", "yarn add -D"
             )) {
                 resolve(eleventyDir);
+            } else if (await _installEleventyIfPkgManagerFound(
+                eleventyVersion, projectRoot, "pnpm-lock.yaml", "pnpm install -D"
+            )) {
+                resolve(eleventyDir);
             } else {
                 throw new Error(`Error while installing eleventy${eleventyVersion}: Could not determine package manager`);
             }

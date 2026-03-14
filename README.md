@@ -19,6 +19,7 @@ Important concepts:
    ```sh
    npm install --save-dev eleventy-test
    yarn add -D eleventy-test
+   pnpm install -D eleventy-test
    ```
 2. Create a `tests/` directory in your package root
     ```sh
