@@ -15,11 +15,14 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+      - name: "Setup pnpm"
+        uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: yarn install --immutable 
-      - run: yarn build
+          cache: "pnpm"
+      - run: pnpm install 
+      - run: pnpm build
       - uses: ncipollo/release-action@v1.20.0
         with:
           artifacts: dist/index.js
@@ -33,10 +36,13 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6
+      - name: "Setup pnpm"
+        uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org/
-      - run: yarn install --immutable 
-      - run: yarn build
+          cache: "pnpm"
+      - run: pnpm install 
+      - run: pnpm build
       - run: npm publish

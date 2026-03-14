@@ -6,9 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: "Setup pnpm"
+        uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: yarn install --immutable 
-      - run: yarn build
-      - run: yarn test
+          cache: "pnpm"
+      - run: pnpm install 
+      - run: pnpm build
+      - run: pnpm test

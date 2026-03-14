@@ -1,0 +1,24 @@
+# Block git repo/tarball sources for indirect dependencies
+# https://pnpm.io/settings#blockexoticsubdeps
+blockExoticSubdeps: true
+
+# Disable hoisting
+# https://pnpm.io/blog/2020/10/17/node-modules-configuration-options-with-pnpm#a-strict-traditional-modules-directory
+hoist: false
+# Minimum release age
+minimumReleaseAge: 4320 # in minutes
+minimumReleaseAgeExclude:
+  - undici@7.24.2
+
+# Block install scripts
+# https://pnpm.io/settings#strictdepbuilds
+strictDepBuilds: true
+allowBuilds:
+  esbuild: true
+
+# Don't install newer versions if security measures decreased
+# https://pnpm.io/settings#trustpolicy
+trustPolicy: no-downgrade
+trustPolicyExclude:
+  # Has since been patched https://github.com/advisories/GHSA-pjwm-rvh2-c87w
+  - ua-parser-js@1.0.41

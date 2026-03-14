@@ -9,10 +9,11 @@
   "files": [
     "dist/*"
   ],
+  "packageManager": "pnpm@10.32.1+sha256.9b943b94bc8f55efb993aad8e44b538e6b091e60a9e4a944dcde869855f233e3",
   "scripts": {
     "start": "node dist/index.js",
-    "watch": "npm-run-all --parallel 'build:js --watch' 'build:types -w'",
-    "build": "npm-run-all --serial build:js build:types",
+    "watch": "concurrently 'pnpm run build:js --watch' 'pnpm run build:types -w'",
+    "build": "pnpm build:js && pnpm build:types",
     "build:js": "esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node",
     "build:types": "tsc --declaration src/index.ts --emitDeclarationOnly --outDir ./dist",
     "test": "ava tests/test.*.mjs --timeout=90s",
@@ -22,16 +23,20 @@
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
     "@11ty/eleventy1.0.2": "npm:@11ty/eleventy@1.0.2",
-    "@11ty/eleventy2": "npm:@11ty/eleventy@2",
+    "@11ty/eleventy2": "npm:@11ty/eleventy@^2.0.1",
     "@11ty/eleventy2.0.0-canary.8": "npm:@11ty/eleventy@2.0.0-canary.8",
     "@11ty/eleventy2.0.1": "npm:@11ty/eleventy@2.0.1",
     "@11ty/eleventy3.1.2": "npm:@11ty/eleventy@3.1.2",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.4.0",
     "ava": "^7.0.0",
+    "concurrently": "^9.2.1",
     "esbuild": "^0.27.3",
     "jsdom": "^28.1.0",
-    "npm-run-all": "^4.1.5",
     "typescript": "^5.9.3"
   },
-  "dependencies": {}
+  "overrides": {
+    "@11ty/eleventy@1.0.2": {
+      "recursive-copy": "2.0.14"
+    }
+  }
 }

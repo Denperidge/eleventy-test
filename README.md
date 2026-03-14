@@ -115,12 +115,14 @@ This require Node.js & yarn to be installed.
 ```bash
 git clone https://github.com/Denperidge/eleventy-test
 cd eleventy-test
-yarn install
+# Enable pnpm
+corepack enable
+pnpm install
 
-yarn watch  # Build & watch for changes. Should be active during development/testing of eleventy-test
-yarn build  # Build
-yarn start  # Run built js as module (see bottom of index.ts require.main === module)
-yarn test  # Using the built js, run the tests from tests/test.mjs
+pnpm watch  # Build & watch for changes. Should be active during development/testing of eleventy-test
+pnpm build  # Build
+pnpm start  # Run built js as module (see bottom of index.ts require.main === module)
+pnpm test  # Using the built js, run the tests from tests/test.mjs
 ```
 
 ## Explanation
